@@ -1,7 +1,7 @@
 # --- 核心基础配置 ---
 title: 悔恨自己
 SEOTitle: "悔恨自己｜个人技术博客，记录生活与技术分享"
-description: "KBlog 个人独立博客，专注技术笔记、创意内容与经验分享，沉淀日常学习与思考。"
+description: "KBlog个人独立博客，记录技术笔记、日常思考与实践经验，分享学习心得，沉淀生活与技术点滴。"
 keywords: "KBlog,blog,个人博客,技术博客,博客,独立博客,github博客"
 baseurl: ""
 url: "https://hhzj.hair"
@@ -23,4 +23,4 @@ plugins:
 # --- Markdown 渲染（保留GFM，删除全部代码块高亮配置） ---
 markdown: kramdown
 kramdown:
-#  input: GFM
+  input: GFM
