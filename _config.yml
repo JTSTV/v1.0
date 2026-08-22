@@ -1,7 +1,7 @@
 # --- 核心基础配置 ---
 title: 悔恨自己
 SEOTitle: "悔恨自己｜个人技术博客，记录生活与技术分享"
-description: "KBlog个人独立博客，分享技术心得与生活随想，记录学习点滴，沉淀思考，留住平凡日子里的所思与所得。"
+description: "KBlog个人独立博客，探索技术实践，记录学习见闻，分享所思所感，沉淀日常感悟，记下生活与求知路上的点滴收获。"
 keywords: "KBlog,blog,个人博客,技术博客,博客,独立博客,github博客"
 baseurl: ""
 url: "https://hhzj.hair"
@@ -11,7 +11,6 @@ timezone: Asia/Shanghai
 
 # --- 性能与构建优化 ---
 future: false
-# 生成带 .html 后缀链接
 permalink: /:year/:month/:day/:title.html
 paginate: 10
 paginate_path: "/page:num/"
@@ -20,7 +19,7 @@ paginate_path: "/page:num/"
 plugins:
   - jekyll-paginate
 
-# --- Markdown 渲染（保留GFM，删除全部代码块高亮配置） ---
+# --- Markdown 渲染（保留GFM） ---
 markdown: kramdown
 kramdown:
   input: GFM
