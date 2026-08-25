@@ -4,15 +4,15 @@ SEOTitle: "悔恨自己｜个人技术博客，记录生活与技术分享"
 description: "KBlog 个人独立博客，专注技术笔记、创意内容与经验分享，沉淀日常学习与思考。"
 keywords: "KBlog,blog,个人博客,技术博客,博客,独立博客,github博客"
 baseurl: ""
-url: "https://hhzj.hair"
+url: "https://jtstv.github.io"
 
 # ========== 修复时区！北京时间东八区 ==========
 timezone: Asia/Shanghai
 
 # --- 性能与构建优化 ---
 future: false
-# 生成带 .html 后缀链接
-permalink: /:year/:month/:day/:title.html
+# 精简链接，取消.html后缀，干净自然URL
+permalink: /:year/:month/:day/:title
 paginate: 10
 paginate_path: "/page:num/"
 
