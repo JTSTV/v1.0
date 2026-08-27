@@ -1,6 +1,4 @@
 name: Auto‑Post：文件名做标题
-permissions:
-  contents: write   # ✅关键：授予写入仓库权限
 on:
   push:
     branches: [ main ]
@@ -56,7 +54,6 @@ jobs:
 
           git config user.name "KBot‑Auto"
           git config user.email "bot@local"
-          git remote set-url origin https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
           git add "${POST_DIR}/"
           git commit -m "[SKIP_AUTO_TITLE] auto:文件名生成标题"
           git push origin main
