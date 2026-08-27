@@ -1,4 +1,4 @@
-name: Auto‑Post Convert
+name: Auto‑Post Convert PR
 on:
   push:
     branches:
@@ -7,6 +7,9 @@ on:
 jobs:
   convert:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -42,10 +45,10 @@ EOF
             rm -f "${file}"
           done
 
-      - name: try commit push
-        run: |
-          git config user.name "KBot‑Auto"
-          git config user.email "bot@local"
-          git add "${POST_DIR}/"
-          git commit -m "[SKIP_AUTO_TITLE] auto:文件名生成标题" || true
-          git push || true
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: bot-auto-convert
+          title: "Bot自动转换生成文章"
+          body: "由Action自动转换原始文件生成，请检查内容后合并"
