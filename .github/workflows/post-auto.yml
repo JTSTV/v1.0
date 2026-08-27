@@ -1,4 +1,4 @@
-name: Auto‑Post Convert PR
+name: Auto‑Post Convert LogOnly
 on:
   push:
     branches:
@@ -7,9 +7,6 @@ on:
 jobs:
   convert:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,7 +18,7 @@ jobs:
           sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
           echo 'Asia/Shanghai' | sudo tee /etc/timezone
 
-      - name: Convert raw file to markdown
+      - name: Convert raw file and print result to log
         run: |
           POST_DIR="_posts"
           TODAY=$(date +%Y-%m-%d)
@@ -33,22 +30,17 @@ jobs:
             [[ "${file}" == *.md ]] && continue
             [[ "${file}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}- ]] && continue
 
-            TMP=$(mktemp)
-            cat > "${TMP}" <<EOF
+            echo "=================================================="
+            echo "文件名：${file}"
+            echo "生成文件名：${TODAY}-${file}.md"
+            echo "--------复制下面全部内容--------"
+            cat <<EOF
 ---
 title: "${file}"
 date: ${TODAY}
 ---
 $(cat "${file}")
 EOF
-            mv "${TMP}" "${TODAY}-${file}.md"
-            rm -f "${file}"
+            echo "--------复制上面全部内容--------"
+            echo "=================================================="
           done
-
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: bot-auto-convert
-          title: "Bot自动转换生成文章"
-          body: "由Action自动转换原始文件生成，请检查内容后合并"
