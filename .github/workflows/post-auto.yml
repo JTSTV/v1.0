@@ -1,46 +1,59 @@
-name: Auto‑Post Convert LogOnly
+name: Auto‑Post：文件名做标题
 on:
   push:
-    branches:
-      - main
-
+    branches: [ main ]
 jobs:
-  convert:
+  convert_raw_post:
     runs-on: ubuntu-latest
+    if: "! contains(github.event.head_commit.message, '[SKIP_AUTO_TITLE]')"
     steps:
-      - name: Checkout code
+      - name: 拉取完整代码
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set Timezone Asia/Shanghai
+      - name: 设置时区北京时间
         run: |
           sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
-          echo 'Asia/Shanghai' | sudo tee /etc/timezone
+          echo "Asia/Shanghai" | sudo tee /etc/timezone
 
-      - name: Convert raw file and print result to log
+      - name: 自动生成文章
         run: |
           POST_DIR="_posts"
           TODAY=$(date +%Y-%m-%d)
+          CHANGED=0
           mkdir -p "${POST_DIR}"
           cd "${POST_DIR}"
 
           for file in *; do
-            [[ -d "${file}" ]] && continue
+            [ -d "${file}" ] && continue
             [[ "${file}" == *.md ]] && continue
-            [[ "${file}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}- ]] && continue
+            echo "${file}" | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}-' >/dev/null && continue
 
-            echo "=================================================="
-            echo "文件名：${file}"
-            echo "生成文件名：${TODAY}-${file}.md"
-            echo "--------复制下面全部内容--------"
-            cat <<EOF
----
-title: "${file}"
-date: ${TODAY}
----
-$(cat "${file}")
-EOF
-            echo "--------复制上面全部内容--------"
-            echo "=================================================="
+            TMP_RAW=$(mktemp)
+            TITLE_FROM_FILENAME="${file}"
+            OUT_MD="${TODAY}-${file}.md"
+            {
+              echo '---'
+              echo "title: \"${TITLE_FROM_FILENAME}\""
+              echo "date: ${TODAY}"
+              echo '---'
+              cat "${file}"
+            } > "${TMP_RAW}"
+
+            rm -f "${file}"
+            mv "${TMP_RAW}" "${OUT_MD}"
+            CHANGED=1
           done
+
+          cd ..
+          if [[ ${CHANGED} -eq 0 ]]; then
+            echo "无需要转换的文件"
+            exit 0
+          fi
+
+          git config user.name "KBot‑Auto"
+          git config user.email "bot@local"
+          git add "${POST_DIR}/"
+          git commit -m "[SKIP_AUTO_TITLE] auto:文件名生成标题"
+          git push
