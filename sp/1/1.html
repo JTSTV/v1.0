@@ -14,7 +14,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .file-item{display:flex;flex-direction:column;padding:15px 20px 35px;margin-bottom:15px;border-radius:12px;position:relative;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#444}
 .file-info{display:flex;align-items:center;margin-bottom:12px}
 .icon{font-size:1.5rem;margin-right:12px;flex-shrink:0}
-.name-text{font-size:1rem;line-height:1.4;word-break:break-all}
+.name-text{font-size:1rem;line-height:1.4;word-break:break-word}
 .actions{display:flex;gap:8px;align-self:flex-end}
 .btn{padding:8px 16px;border-radius:20px;text-decoration:none;font-size:.9rem;font-weight:500;color:#333;border:none;cursor:pointer;transition:opacity .2s;background:rgba(255,255,255,.4)}
 .btn:hover{opacity:.9}
@@ -24,7 +24,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .modal-content{width:90%;max-width:900px;position:relative;max-height:100vh;display:flex;justify-content:center}
 video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:contain;background:#000}
 .close-modal{position:absolute;bottom:15px;right:15px;width:40px;height:40px;background:rgba(255,255,255,.9);color:#000;border-radius:50%;text-align:center;line-height:40px;font-size:28px;font-weight:bold;cursor:pointer;z-index:1002;box-shadow:0 2px 10px rgba(0,0,0,.3);border:none;outline:none;padding:0}
-
 /* --- 倍速控制样式更新 --- */
 .speed-control{
     position: absolute;
@@ -35,11 +34,11 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     color: #fff;
     padding: 5px 10px;
     border-radius: 20px;
-    font-size: 0.7rem; /* 字体缩小一半 */
+    font-size: 0.7rem;
     z-index: 1001;
     backdrop-filter: blur(4px);
     display: flex;
-    flex-direction: column; /* 垂直排列 */
+    flex-direction: column;
     gap: 5px;
 }
 .speed-btn{
@@ -48,13 +47,22 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     color: #fff;
     cursor: pointer;
     padding: 2px 6px;
-    font-size: 0.7rem; /* 字体缩小一半 */
+    font-size: 0.7rem;
     border-radius: 4px;
     transition: background .2s;
 }
 .speed-btn:hover,.speed-btn.active{background:rgba(255,255,255,.3)}
-
-@media(max-width:600px){.container{padding:0}.header{padding:15px 20px}.header h2{font-size:18px}.file-item{padding:12px 15px 30px}.name-text{font-size:.95rem}.icon{font-size:1.2rem;margin-right:8px}.btn{padding:6px 12px;font-size:.8rem}.modal-content{width:100%;height:100%;border-radius:0}video{border-radius:0;height:100%}}
+@media(max-width:600px){
+.container{padding:0}
+.header{padding:15px 20px}
+.header h2{font-size:18px}
+.file-item{padding:12px 15px 30px}
+.name-text{font-size:.95rem}
+.icon{font-size:1.2rem;margin-right:8px}
+.btn{padding:6px 12px;font-size:.8rem}
+.modal-content{width:100%;height:100%;border-radius:0}
+video{border-radius:0;height:100%}
+}
 </style>
 </head>
 <body>
@@ -67,7 +75,6 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
         <li class="loading">正在加载文件列表...</li>
     </ul>
 </div>
-
 <!-- 视频播放弹窗 -->
 <div id="videoModal" class="modal" onclick="closeVideo()">
     <div class="modal-content" onclick="event.stopPropagation()">
@@ -79,33 +86,58 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
         <button class="close-modal" onclick="closeVideo()">&times;</button>
     </div>
 </div>
-
 <script>
 // ================= 配置区域 =================
-const owner = 'Jtstv'; 
-const repo = 'Jtstv.github.io'; 
-const path = 'sp';
+const owner = 'Jtstv';
+const repo = 'Jtstv.github.io';
+let currentPath = 'sp'; // 当前浏览目录，支持切换子文件夹
 const MY_WORKER_BASE = 'https://jtstv.github.io/v1.0/sp';
-const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
 
+// 根据当前目录生成api地址
+function getApiUrl(){
+    return `https://api.github.com/repos/${owner}/${repo}/contents/${currentPath}`;
+}
+
+// ✅修复URL拼接：只传仓库内路径，做url编码
 function getFastUrl(filePath) {
-    const rawGithubUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${filePath}`;
-    return MY_WORKER_BASE + rawGithubUrl;
+    return `${MY_WORKER_BASE}/${encodeURIComponent(filePath)}`;
 }
 
 // ================= 逻辑区域 =================
 async function loadFiles(){
     const el = document.getElementById('fileList');
+    el.innerHTML = '<li class="loading">正在加载文件列表...</li>';
     try{
-        const res = await fetch(apiUrl);
+        const res = await fetch(getApiUrl());
         if(!res.ok) throw new Error('无法连接 GitHub API');
         const files = await res.json();
         el.innerHTML = '';
+
+        // 上级目录返回按钮（不在根sp目录时显示）
+        if(currentPath !== 'sp'){
+            const backLi = document.createElement('li');
+            backLi.className = 'file-item';
+            const parentPath = currentPath.split('/').slice(0,-1).join('/');
+            backLi.innerHTML = `
+                <div class="file-info">
+                    <span class="icon">⬅️</span>
+                    <span class="name-text">返回上一级</span>
+                </div>
+                <div class="actions">
+                    <button class="btn" onclick="enterDir('${parentPath}')">进入</button>
+                </div>
+            `;
+            el.appendChild(backLi);
+        }
+
         if(!files.length){
             el.innerHTML = '<li class="loading">该目录下空空如也</li>';
             return;
         }
+
+        // 文件夹排前面
         files.sort((a,b) => a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1);
+
         files.forEach(f => {
             const li = document.createElement('li');
             li.className = 'file-item';
@@ -113,20 +145,23 @@ async function loadFiles(){
             const isVid = /\.(mp4|mov|webm|m3u8)$/i.test(f.name);
             let icon = isDir ? '📁' : isVid ? '🎬' : /\.(jpg|jpeg|png|gif)$/i.test(f.name) ? '🖼️' : '📄';
             let btns = '';
+
             if(isDir) {
-                btns = `<span style="font-size:0.8rem;color:#999">文件夹</span>`;
+                btns = `<button class="btn" onclick="enterDir('${f.path}')">进入文件夹</button>`;
             } else {
                 const fastUrl = getFastUrl(f.path);
                 btns += `<a href="${fastUrl}" class="btn" target="_blank">下载</a>`;
                 if(isVid) {
-                    const safeUrl = fastUrl.replace(/'/g, "\\'");
+                    // 安全转义，避免js注入
+                    const safeUrl = fastUrl.replace(/[\\']/g, '\\$&');
                     btns += `<button onclick="playVideo('${safeUrl}')" class="btn">播放</button>`;
                 }
             }
+
             li.innerHTML = `
                 <div class="file-info">
                     <span class="icon">${icon}</span>
-                    <span class="name-text">${f.name}</span>
+                    <span class="name-text">${escapeHtml(f.name)}</span>
                 </div>
                 <div class="actions">${btns}</div>
             `;
@@ -134,16 +169,32 @@ async function loadFiles(){
         });
         applyItemStyles();
     } catch(e) {
-        el.innerHTML = `<li class="loading" style="color:red">加载失败: ${e.message}</li>`;
+        el.innerHTML = `<li class="loading" style="color:red">加载失败: ${escapeHtml(e.message)}</li>`;
     }
 }
 
+// 进入子文件夹
+function enterDir(newPath){
+    currentPath = newPath;
+    loadFiles();
+}
+
+// HTML转义防止XSS
+function escapeHtml(str){
+    return String(str)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#039;');
+}
+
 function applyItemStyles() {
-    let h = 0;
+    let hue = 10;
     document.querySelectorAll('.file-item').forEach(item => {
-        let h1 = (h + 120 + Math.random() * 120) % 360;
+        let h1 = (hue + Math.random() * 120) % 360;
         let h2 = (h1 + 30 + Math.random() * 60) % 360;
-        h = h1;
+        hue = h1;
         item.style.background = `linear-gradient(135deg, hsla(${h1}, 65%, 85%, .85), hsla(${h2}, 65%, 75%, .85))`;
         item.style.boxShadow = `0 0 40px 10px rgba(232,232,232,1)`;
     });
@@ -155,7 +206,7 @@ const playVideo = url => {
     p.src = url;
     m.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-    p.play().catch(err => console.log('需用户交互才能播放'));
+    // 移除自动播放，交由用户手动点播放按钮
 };
 
 const closeVideo = () => {
@@ -175,6 +226,7 @@ const setSpeed = s => {
     });
 };
 
+// 页面初始化加载
 loadFiles();
 </script>
 </body>
