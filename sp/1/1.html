@@ -90,15 +90,17 @@ video{border-radius:0;height:100%}
 // ================= 配置区域 =================
 const owner = 'Jtstv';
 const repo = 'Jtstv.github.io';
-let currentPath = 'sp'; // 当前浏览目录，支持切换子文件夹
-const MY_WORKER_BASE = 'https://jtstv.github.io/v1.0/sp';
+let currentPath = 'sp';
+const MY_WORKER_BASE = 'https://sp.hhzj.hair';
+const API_PROXY = 'https://corsproxy.io/?';
 
-// 根据当前目录生成api地址
+// 根据当前目录生成api地址（走代理）
 function getApiUrl(){
-    return `https://api.github.com/repos/${owner}/${repo}/contents/${currentPath}`;
+    const rawApi = `https://api.github.com/repos/${owner}/${repo}/contents/${currentPath}`;
+    return API_PROXY + encodeURIComponent(rawApi);
 }
 
-// ✅修复URL拼接：只传仓库内路径，做url编码
+// 修复URL拼接：只传仓库内路径，做url编码
 function getFastUrl(filePath) {
     return `${MY_WORKER_BASE}/${encodeURIComponent(filePath)}`;
 }
@@ -160,7 +162,7 @@ async function loadFiles(){
 
             li.innerHTML = `
                 <div class="file-info">
-                    <span class="icon">${icon}</span>
+                    <span class="icon">${escapeHtml(f.name)}</span>
                     <span class="name-text">${escapeHtml(f.name)}</span>
                 </div>
                 <div class="actions">${btns}</div>
@@ -206,7 +208,6 @@ const playVideo = url => {
     p.src = url;
     m.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-    // 移除自动播放，交由用户手动点播放按钮
 };
 
 const closeVideo = () => {
