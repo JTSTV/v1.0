@@ -19,60 +19,42 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .btn{padding:8px 16px;border-radius:20px;text-decoration:none;font-size:.9rem;font-weight:500;color:#333;border:none;cursor:pointer;transition:opacity .2s;background:rgba(255,255,255,.4)}
 .btn:hover{opacity:.9}
 .loading{text-align:center;padding:40px;color:#888}
-
+/* 模态框样式 */
 .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background-color:rgba(0,0,0,.95);align-items:center;justify-content:center;overflow:hidden}
-.modal-content{width:90%;max-width:900px;position:relative;max-height:90vh;display:flex;flex-direction:column}
+.modal-content{width:90%;max-width:900px;position:relative;max-height:100vh;display:flex;justify-content:center}
+video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:contain;background:#000}
+.close-modal{position:absolute;bottom:15px;right:15px;width:40px;height:40px;background:rgba(255,255,255,.9);color:#000;border-radius:50%;text-align:center;line-height:40px;font-size:28px;font-weight:bold;cursor:pointer;z-index:1002;box-shadow:0 2px 10px rgba(0,0,0,.3);border:none;outline:none;padding:0}
 
-video{width:100%;background:#000;border-radius:8px;object-fit:contain}
-/* 手势层：铺满整个视频画面，接收滑动，透明看不见 */
-.gesture-overlay{
-    position:absolute;
-    left:0;top:0;right:0;bottom:44px;
-    z-index:2;
-    touch-action:none;
-}
-/* 自制简易控制栏 */
-.custom-controls{
-    display:flex;gap:10px;align-items:center;padding:8px 4px;color:#fff}
-.custom-controls button{
-    background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:0.75rem;cursor:pointer
-}
-#progressBar{flex:1;height:6px;background:#444;border-radius:3px;cursor:pointer}
-#progressFill{height:100%;background:#2b7cff;border-radius:3px;width:0%}
-
+/* --- 倍速控制样式更新 --- */
 .speed-control{
     position: absolute;
     top: 50%;
-    right:10px;
+    right: 15px;
     transform: translateY(-50%);
     background: rgba(0,0,0,.6);
     color: #fff;
-    padding: 5px 8px;
+    padding: 5px 10px;
     border-radius: 20px;
-    font-size: 0.7rem;
-    z-index:10;
+    font-size: 0.7rem; /* 字体缩小一半 */
+    z-index: 1001;
+    backdrop-filter: blur(4px);
     display: flex;
-    flex-direction: column;
-    gap:4px;
+    flex-direction: column; /* 垂直排列 */
+    gap: 5px;
 }
 .speed-btn{
     background: none;
     border: none;
     color: #fff;
     cursor: pointer;
-    padding:2px 4px;
-    font-size:0.7rem;
-    border-radius:4px;
+    padding: 2px 6px;
+    font-size: 0.7rem; /* 字体缩小一半 */
+    border-radius: 4px;
+    transition: background .2s;
 }
 .speed-btn:hover,.speed-btn.active{background:rgba(255,255,255,.3)}
 
-@media(max-width:600px){
-.container{padding:0}.header{padding:15px 20px}.header h2{font-size:18px}
-.file-item{padding:12px 15px 30px}.name-text{font-size:.95rem}.icon{font-size:1.2rem;margin-right:8px}
-.btn{padding:6px 12px;font-size:.8rem}
-.modal-content{width:100%;max-height:100vh;height:100vh;border-radius:0}
-video{border-radius:0}
-}
+@media(max-width:600px){.container{padding:0}.header{padding:15px 20px}.header h2{font-size:18px}.file-item{padding:12px 15px 30px}.name-text{font-size:.95rem}.icon{font-size:1.2rem;margin-right:8px}.btn{padding:6px 12px;font-size:.8rem}.modal-content{width:100%;height:100%;border-radius:0}video{border-radius:0;height:100%}}
 </style>
 </head>
 <body>
@@ -86,46 +68,32 @@ video{border-radius:0}
     </ul>
 </div>
 
-<div id="videoModal" class="modal">
-    <div class="modal-content">
-        <video id="videoPlayer" playsinline webkit-playsinline preload="auto"></video>
-        <!-- 手势层，铺满视频画面，整个视频上可以滑动 -->
-        <div class="gesture-overlay" id="gestureOverlay"></div>
-        <!--倍速按钮，层级最高，不受手势层遮挡 -->
+<!-- 视频播放弹窗 -->
+<div id="videoModal" class="modal" onclick="closeVideo()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <video id="videoPlayer" controls playsinline webkit-playsinline preload="auto">您的浏览器不支持 HTML5 视频播放。​​​</video>
         <div class="speed-control" id="speedControl">
             <button class="speed-btn" onclick="setSpeed(0.5)">0.5x</button>
             <button class="speed-btn" onclick="setSpeed(1.0)">1.0x</button>
         </div>
-        <!--自制简易控制栏，无多余按钮 -->
-        <div class="custom-controls">
-            <button id="playToggle">播放</button>
-            <div id="progressBar"><div id="progressFill"></div></div>
-        </div>
+        <button class="close-modal" onclick="closeVideo()">&times;</button>
     </div>
 </div>
 
 <script>
-const owner = 'Jtstv';
-const repo = 'v1.0';
+// ================= 配置区域 =================
+const owner = 'Jtstv'; 
+const repo = 'v1.0'; 
 const path = 'sp';
 const MY_WORKER_BASE = 'https://jiasu.jxqt.eu.org/';
 const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+
 function getFastUrl(filePath) {
     const rawGithubUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${filePath}`;
     return MY_WORKER_BASE + rawGithubUrl;
 }
 
-let globalVideoList = [];
-let currentIdx = -1;
-let touchXStart = 0;
-let touchYStart = 0;
-const videoPlayer = document.getElementById('videoPlayer');
-const modalDom = document.getElementById('videoModal');
-const gestureOverlay = document.getElementById('gestureOverlay');
-const playToggleBtn = document.getElementById('playToggle');
-const progressBar = document.getElementById('progressBar');
-const progressFill = document.getElementById('progressFill');
-
+// ================= 逻辑区域 =================
 async function loadFiles(){
     const el = document.getElementById('fileList');
     try{
@@ -133,7 +101,6 @@ async function loadFiles(){
         if(!res.ok) throw new Error('无法连接 GitHub API');
         const files = await res.json();
         el.innerHTML = '';
-        globalVideoList = files.filter(f=>!f.type&&/\.(mp4|mov|webm|m3u8)$/i.test(f.name));
         if(!files.length){
             el.innerHTML = '<li class="loading">该目录下空空如也</li>';
             return;
@@ -152,9 +119,8 @@ async function loadFiles(){
                 const fastUrl = getFastUrl(f.path);
                 btns += `<a href="${fastUrl}" class="btn" target="_blank">下载</a>`;
                 if(isVid) {
-                    const vidIndex = globalVideoList.findIndex(v=>v.name===f.name);
                     const safeUrl = fastUrl.replace(/'/g, "\\'");
-                    btns += `<button onclick="playVideo('${safeUrl}',${vidIndex})" class="btn">播放</button>`;
+                    btns += `<button onclick="playVideo('${safeUrl}')" class="btn">播放</button>`;
                 }
             }
             li.innerHTML = `
@@ -166,108 +132,48 @@ async function loadFiles(){
             `;
             el.appendChild(li);
         });
+        applyItemStyles();
     } catch(e) {
         el.innerHTML = `<li class="loading" style="color:red">加载失败: ${e.message}</li>`;
     }
 }
 
-//打开播放器弹窗
-const playVideo = (url,idx) => {
-    currentIdx = idx;
-    videoPlayer.src = url;
-    modalDom.style.display = 'flex';
+function applyItemStyles() {
+    let h = 0;
+    document.querySelectorAll('.file-item').forEach(item => {
+        let h1 = (h + 120 + Math.random() * 120) % 360;
+        let h2 = (h1 + 30 + Math.random() * 60) % 360;
+        h = h1;
+        item.style.background = `linear-gradient(135deg, hsla(${h1}, 65%, 85%, .85), hsla(${h2}, 65%, 75%, .85))`;
+        item.style.boxShadow = `0 0 40px 10px rgba(232,232,232,1)`;
+    });
+}
+
+const playVideo = url => {
+    const m = document.getElementById('videoModal');
+    const p = document.getElementById('videoPlayer');
+    p.src = url;
+    m.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-    videoPlayer.play().catch(err => console.log('需用户交互才能播放'));
-    playToggleBtn.textContent = videoPlayer.paused ? '播放' : '暂停';
-    //绑定手势，整个视频画面生效
-    gestureOverlay.addEventListener('touchstart',ts,{passive:true});
-    gestureOverlay.addEventListener('touchend',te,{passive:true});
+    p.play().catch(err => console.log('需用户交互才能播放'));
 };
 
-//关闭播放器（手势右滑触发）
 const closeVideo = () => {
-    modalDom.style.display = 'none';
-    gestureOverlay.removeEventListener('touchstart',ts);
-    gestureOverlay.removeEventListener('touchend',te);
-    videoPlayer.pause();
-    videoPlayer.src = '';
+    const m = document.getElementById('videoModal');
+    const p = document.getElementById('videoPlayer');
+    m.style.display = 'none';
+    p.pause();
+    p.src = '';
     document.body.style.overflow = '';
-    currentIdx = -1;
 };
 
-//倍速
 const setSpeed = s => {
-    videoPlayer.playbackRate = s;
+    const p = document.getElementById('videoPlayer');
+    p.playbackRate = s;
     document.querySelectorAll('.speed-btn').forEach(b => {
         b.classList.toggle('active', parseFloat(b.textContent) === s);
     });
 };
-
-//播放暂停切换
-playToggleBtn.onclick = ()=>{
-    if(videoPlayer.paused){
-        videoPlayer.play();
-        playToggleBtn.textContent = '暂停';
-    }else{
-        videoPlayer.pause();
-        playToggleBtn.textContent = '播放';
-    }
-};
-
-//进度条拖拽
-progressBar.onclick = (e)=>{
-    if(!videoPlayer.duration) return;
-    const rect = progressBar.getBoundingClientRect();
-    const percent = (e.clientX - rect.left)/rect.width;
-    videoPlayer.currentTime = videoPlayer.duration * percent;
-};
-//更新进度条UI
-videoPlayer.ontimeupdate = ()=>{
-    if(videoPlayer.duration){
-        progressFill.style.width = (videoPlayer.currentTime / videoPlayer.duration *100).toFixed(1)+'%';
-    }
-};
-videoPlayer.onplay = ()=> playToggleBtn.textContent='暂停';
-videoPlayer.onpause = ()=> playToggleBtn.textContent='播放';
-
-//手势逻辑（直接在视频画面滑动）
-function ts(e){
-    touchXStart = e.touches[0].clientX;
-    touchYStart = e.touches[0].clientY;
-}
-function te(e){
-    if(currentIdx === -1) return;
-    const endX = e.changedTouches[0].clientX;
-    const endY = e.changedTouches[0].clientY;
-    const dx = endX - touchXStart;
-    const dy = endY - touchYStart;
-
-    //👉向右横滑视频画面 → 关闭弹窗回到列表
-    if(Math.abs(dx) > 85 && Math.abs(dy) < 75 && dx>0){
-        closeVideo();
-        return;
-    }
-    //👆上滑视频画面 → 下一个视频
-    if(Math.abs(dy) >75 && Math.abs(dx)<85){
-        if(dy < -75){
-            if(currentIdx < globalVideoList.length-1){
-                currentIdx++;
-                const nextUrl = getFastUrl(globalVideoList[currentIdx].path);
-                videoPlayer.src = nextUrl;
-                videoPlayer.play().catch(()=>{});
-            }
-        }
-        //👇下滑视频画面 → 上一个视频
-        else if(dy>75){
-            if(currentIdx>0){
-                currentIdx--;
-                const prevUrl = getFastUrl(globalVideoList[currentIdx].path);
-                videoPlayer.src = prevUrl;
-                videoPlayer.play().catch(()=>{});
-            }
-        }
-    }
-}
 
 loadFiles();
 </script>
