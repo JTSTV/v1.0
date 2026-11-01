@@ -19,19 +19,37 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .btn{padding:8px 16px;border-radius:20px;text-decoration:none;font-size:.9rem;font-weight:500;color:#333;border:none;cursor:pointer;transition:opacity .2s;background:rgba(255,255,255,.4)}
 .btn:hover{opacity:.9}
 .loading{text-align:center;padding:40px;color:#888}
-/* 模态框【原有弹窗】全部原样 */
 .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background-color:rgba(0,0,0,.95);align-items:center;justify-content:center;overflow:hidden}
 .modal-content{width:90%;max-width:900px;position:relative;max-height:100vh;display:flex;justify-content:center}
 video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:contain;background:#000}
-/* 透明手势层，盖在video上面，接收触摸事件，看不见，不遮挡视频画面 */
+/*手势层：只跟随video大小，不覆盖按钮区域*/
 .gesture-layer{
     position:absolute;
-    inset:0;
+    left:0;
+    top:0;
+    width:100%;
+    height:100%;
     z-index:2;
     touch-action:none;
+    pointer-events:auto;
 }
-.close-modal{position:absolute;bottom:15px;right:15px;width:40px;height:40px;background:rgba(255,255,255,.9);color:#000;border-radius:50%;text-align:center;line-height:40px;font-size:28px;font-weight:bold;cursor:pointer;z-index:1002;box-shadow:0 2px 10px rgba(0,0,0,.3);border:none;outline:none;padding:0}
-/* --- 倍速控制样式更新 --- */
+.close-modal{
+    position:absolute;
+    bottom:15px;
+    right:15px;
+    width:40px;height:40px;
+    background:rgba(255,255,255,.9);
+    color:#000;
+    border-radius:50%;
+    text-align:center;
+    line-height:40px;
+    font-size:28px;
+    font-weight:bold;
+    cursor:pointer;
+    z-index:10;/*高于手势层*/
+    box-shadow:0 2px 10px rgba(0,0,0,.3);
+    border:none;outline:none;padding:0
+}
 .speed-control{
     position: absolute;
     top: 50%;
@@ -42,7 +60,7 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     padding: 5px 10px;
     border-radius: 20px;
     font-size: 0.7rem;
-    z-index: 1001;
+    z-index:10;/*高于手势层*/
     backdrop-filter: blur(4px);
     display: flex;
     flex-direction: column;
@@ -59,7 +77,13 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     transition: background .2s;
 }
 .speed-btn:hover,.speed-btn.active{background:rgba(255,255,255,.3)}
-@media(max-width:600px){.container{padding:0}.header{padding:15px 20px}.header h2{font-size:18px}.file-item{padding:12px 15px 30px}.name-text{font-size:.95rem}.icon{font-size:1.2rem;margin-right:8px}.btn{padding:6px 12px;font-size:.8rem}.modal-content{width:100%;height:100%;border-radius:0}video{border-radius:0;height:100%}}
+@media(max-width:600px){
+.container{padding:0}.header{padding:15px 20px}.header h2{font-size:18px}
+.file-item{padding:12px 15px 30px}.name-text{font-size:.95rem}.icon{font-size:1.2rem;margin-right:8px}
+.btn{padding:6px 12px;font-size:.8rem}
+.modal-content{width:100%;height:100%;border-radius:0}
+video{border-radius:0;height:100%}
+}
 </style>
 </head>
 <body>
@@ -72,11 +96,9 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
         <li class="loading">正在加载文件列表...</li>
     </ul>
 </div>
-<!--【原有弹窗】DOM，新增透明手势层gesture-layer -->
 <div id="videoModal" class="modal" onclick="closeVideo()">
     <div class="modal-content" onclick="event.stopPropagation()">
         <video id="videoPlayer" controls playsinline webkit-playsinline preload="auto">您的浏览器不支持 HTML5 视频播放。​​​</video>
-        <!-- 透明手势接收层 -->
         <div id="gestureLayer" class="gesture-layer"></div>
         <div class="speed-control" id="speedControl">
             <button class="speed-btn" onclick="setSpeed(0.5)">0.5x</button>
@@ -149,21 +171,18 @@ async function loadFiles(){
     }
 }
 
-// 原版playVideo
 const playVideo = (url,idx) => {
     currentIdx = idx;
     videoPlayer.src = url;
     modalDom.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     videoPlayer.play().catch(err => console.log('需用户交互才能播放'));
-    //绑定【透明手势层】的触摸事件
     gestureLayer.addEventListener('touchstart',ts,{passive:true});
     gestureLayer.addEventListener('touchend',te,{passive:true});
 };
 
 const closeVideo = () => {
     modalDom.style.display = 'none';
-    //解绑手势
     gestureLayer.removeEventListener('touchstart',ts);
     gestureLayer.removeEventListener('touchend',te);
     videoPlayer.pause();
@@ -179,7 +198,6 @@ const setSpeed = s => {
     });
 };
 
-//手势逻辑，绑定在透明层
 function ts(e){
     touchYStart = e.touches[0].clientY;
 }
@@ -188,7 +206,6 @@ function te(e){
     const endY = e.changedTouches[0].clientY;
     const dy = endY - touchYStart;
     if(Math.abs(dy)<70) return;
-    //👆上滑 → 下一个视频
     if(dy < -70){
         if(currentIdx < globalVideoList.length-1){
             currentIdx++;
@@ -197,7 +214,6 @@ function te(e){
             videoPlayer.play().catch(()=>{});
         }
     }
-    //👇下滑 → 上一个视频
     else if(dy>70){
         if(currentIdx>0){
             currentIdx--;
