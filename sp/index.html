@@ -110,6 +110,10 @@ const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
 const videoPlayer = document.getElementById('videoPlayer');
 const videoModal = document.getElementById('videoModal');
 
+//手势变量
+let touchStartX = 0;
+let touchStartY = 0;
+
 function getFastUrl(filePath) {
     const rawGithubUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${filePath}`;
     return MY_WORKER_BASE + rawGithubUrl;
@@ -171,6 +175,22 @@ async function loadFiles(){
     }
 }
 
+//手势监听
+function handleTouchStart(e){
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+}
+function handleTouchEnd(e){
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const dx = endX - touchStartX;
+    const dy = Math.abs(endY - touchStartY);
+    //👉向右横滑，横向大于85px，垂直偏移小于70px才触发关闭，避免拖动进度条误关
+    if(dx > 85 && dy < 70){
+        closeVideo();
+    }
+}
+
 const playVideo = url => {
     videoPlayer.pause();
     videoPlayer.removeAttribute('src');
@@ -179,11 +199,20 @@ const playVideo = url => {
     videoPlayer.src = url;
     videoModal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
+
+    //弹窗打开绑定手势
+    videoModal.addEventListener('touchstart', handleTouchStart, {passive:true});
+    videoModal.addEventListener('touchend', handleTouchEnd, {passive:true});
+
     videoPlayer.play().catch(()=>{});
 };
 
 const closeVideo = () => {
     videoModal.style.display = 'none';
+    //解绑手势，防止关闭后还触发
+    videoModal.removeEventListener('touchstart', handleTouchStart);
+    videoModal.removeEventListener('touchend', handleTouchEnd);
+
     videoPlayer.pause();
     videoPlayer.removeAttribute('src');
     videoPlayer.load();
