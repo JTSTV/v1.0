@@ -8,7 +8,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#e8e8e8;color:#444;padding:20px}
 .container{max-width:680px;margin:0 auto}
-.header{padding:15px 30px;border-radius:6px;background:#e8e8e8;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.header{padding:15px 30px;border-radius:12px;background:#e8e8e8;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
 .header h2{font:600 20px/1.4 sans-serif;color:#444;margin:0}
 .file-list{list-style:none}
 .file-item{
@@ -34,7 +34,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .modal-content{width:90%;max-width:900px;position:relative;max-height:100vh;display:flex;justify-content:center}
 video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:contain;background:#000}
 
-/*倍速：fixed固定在屏幕右侧正中，靠屏幕边缘，安全区适配刘海 */
 .speed-control{
     position: fixed;
     top: 50%;
@@ -90,8 +89,10 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
 </div>
 
 <div id="videoModal" class="modal">
-    <div class="modal-content" onclick="event.stopPropagation()">
-        <video id="videoPlayer" controls playsinline preload="metadata">您的浏览器不支持 HTML5 视频播放。​​​</video>
+    <div class="modal-content">
+        <video id="videoPlayer" controls controlsList="nodownload" playsinline preload="none" crossorigin="anonymous">
+            您的浏览器不支持 HTML5 视频播放。
+        </video>
         <div class="speed-control" id="speedControl">
             <button class="speed-btn" onclick="setSpeed(0.5)">0.5x</button>
             <button class="speed-btn" onclick="setSpeed(1.0)">1.0x</button>
@@ -99,21 +100,38 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     </div>
 </div>
 
-<script>
+<script defer>
 const owner = 'Jtstv';
 const repo = 'v1.0';
 const path = 'sp';
 const MY_WORKER_BASE = 'https://jiasu.jxqt.eu.org/';
 const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+
+const videoPlayer = document.getElementById('videoPlayer');
+const videoModal = document.getElementById('videoModal');
+
 function getFastUrl(filePath) {
     const rawGithubUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${filePath}`;
     return MY_WORKER_BASE + rawGithubUrl;
 }
 
+async function fetchWithTimeout(url, timeoutMs=8000){
+    const ctrl = new AbortController();
+    const timer = setTimeout(()=> ctrl.abort(), timeoutMs);
+    try{
+        const res = await fetch(url, {signal:ctrl.signal});
+        clearTimeout(timer);
+        return res;
+    }catch(e){
+        clearTimeout(timer);
+        throw new Error("请求超时");
+    }
+}
+
 async function loadFiles(){
     const el = document.getElementById('fileList');
     try{
-        const res = await fetch(apiUrl);
+        const res = await fetchWithTimeout(apiUrl);
         if(!res.ok) throw new Error('无法连接 GitHub API');
         const files = await res.json();
         el.innerHTML = '';
@@ -154,31 +172,33 @@ async function loadFiles(){
 }
 
 const playVideo = url => {
-    const m = document.getElementById('videoModal');
-    const p = document.getElementById('videoPlayer');
-    p.src = url;
-    m.style.display = 'flex';
+    videoPlayer.pause();
+    videoPlayer.removeAttribute('src');
+    videoPlayer.load();
+
+    videoPlayer.src = url;
+    videoModal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-    p.play().catch(()=>{});
+    videoPlayer.play().catch(()=>{});
 };
 
-//closeVideo函数保留，以备后续需要调用关闭弹窗，但是页面没有任何按钮调用它
 const closeVideo = () => {
-    const m = document.getElementById('videoModal');
-    const p = document.getElementById('videoPlayer');
-    m.style.display = 'none';
-    p.pause();
-    p.removeAttribute('src');
-    p.load();
+    videoModal.style.display = 'none';
+    videoPlayer.pause();
+    videoPlayer.removeAttribute('src');
+    videoPlayer.load();
     document.body.style.overflow = '';
 };
 
 const setSpeed = s => {
-    const p = document.getElementById('videoPlayer');
-    if(p) p.playbackRate = s;
+    if(videoPlayer) videoPlayer.playbackRate = s;
 };
 
-loadFiles();
+if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", loadFiles);
+}else{
+    loadFiles();
+}
 </script>
 </body>
 </html>
