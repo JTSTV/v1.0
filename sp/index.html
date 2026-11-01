@@ -6,143 +6,69 @@
 <title>我的资源列表</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f5f5f5;color:#333;padding:20px}
-.container{max-width:720px;margin:0 auto}
-.header{padding:12px 4px;margin-bottom:16px}
-.header h2{font:600 18px/1.4 sans-serif;color:#333;margin:0}
-.file-list{list-style:none;padding:0}
-.file-item{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:14px 16px;
-    margin-bottom:10px;
-    border-radius:10px;
-    background:#fff;
-    border:1px solid #eaeaea;
-}
-.file-info{display:flex;align-items:center;min-width:0;flex:1}
-.icon{font-size:1.25rem;margin-right:10px;flex-shrink:0}
-.name-text{
-    font-size:.92rem;
-    line-height:1.4;
-    word-break:break-all;
-    color:#333;
-}
-.actions{display:flex;gap:8px;flex-shrink:0}
-.btn{
-    padding:6px 14px;
-    border-radius:999px;
-    text-decoration:none;
-    font-size:.82rem;
-    font-weight:500;
-    color:#fff;
-    border:none;
-    cursor:pointer;
-    background:#2b7cff;
-}
-.btn:hover{background:#1f6ae0}
-.loading{text-align:center;padding:40px;color:#999;font-size:.9rem}
-.modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background-color:rgba(0,0,0,.9);align-items:center;justify-content:center;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#e8e8e8;color:#444;padding:20px}
+.container{max-width:680px;margin:0 auto}
+.header{padding:15px 30px;border-radius:6px;background:#e8e8e8;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.header h2{font:600 20px/1.4 sans-serif;color:#444;margin:0}
+.file-list{list-style:none}
+.file-item{display:flex;flex-direction:column;padding:15px 20px 35px;margin-bottom:15px;border-radius:12px;position:relative;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#444}
+.file-info{display:flex;align-items:center;margin-bottom:12px}
+.icon{font-size:1.5rem;margin-right:12px;flex-shrink:0}
+.name-text{font-size:1rem;line-height:1.4;word-break:break-all}
+.actions{display:flex;gap:8px;align-self:flex-end}
+.btn{padding:8px 16px;border-radius:20px;text-decoration:none;font-size:.9rem;font-weight:500;color:#333;border:none;cursor:pointer;transition:opacity .2s;background:rgba(255,255,255,.4)}
+.btn:hover{opacity:.9}
+.loading{text-align:center;padding:40px;color:#888}
+/* 模态框【原有弹窗】全部原样 */
+.modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background-color:rgba(0,0,0,.95);align-items:center;justify-content:center;overflow:hidden}
 .modal-content{width:90%;max-width:900px;position:relative;max-height:100vh;display:flex;justify-content:center}
 video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:contain;background:#000}
-.close-modal{
-    position:absolute;
-    bottom:16px;
-    right:16px;
-    width:40px;
-    height:40px;
-    background:rgba(255,255,255,.9);
-    color:#000;
-    border-radius:50%;
-    text-align:center;
-    line-height:40px;
-    font-size:24px;
-    font-weight:bold;
-    cursor:pointer;
-    border:none;
-    outline:none;
-    padding:0;
-}
+.close-modal{position:absolute;bottom:15px;right:15px;width:40px;height:40px;background:rgba(255,255,255,.9);color:#000;border-radius:50%;text-align:center;line-height:40px;font-size:28px;font-weight:bold;cursor:pointer;z-index:1002;box-shadow:0 2px 10px rgba(0,0,0,.3);border:none;outline:none;padding:0}
+/* --- 倍速控制样式更新 --- */
 .speed-control{
-    position:absolute;
-    top:50%;
-    right:14px;
-    transform:translateY(-50%);
-    background:rgba(0,0,0,.55);
-    color:#fff;
-    padding:6px 10px;
-    border-radius:999px;
-    font-size:.72rem;
-    z-index:1001;
-    display:flex;
-    flex-direction:column;
-    gap:4px;
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,.6);
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    z-index: 1001;
+    backdrop-filter: blur(4px);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 .speed-btn{
-    background:none;
-    border:none;
-    color:#fff;
-    cursor:pointer;
-    padding:2px 6px;
-    font-size:.72rem;
-    border-radius:4px;
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    border-radius: 4px;
+    transition: background .2s;
 }
-.speed-btn:hover,.speed-btn.active{background:rgba(255,255,255,.25)}
-.tiktok-modal{
-    display:none;
-    position:fixed;
-    z-index:2000;
-    left:0;top:0;
-    width:100%;height:100%;
-    background:#000;
-    overflow:hidden;
-}
-.tiktok-wrap{width:100%;height:100%;touch-action:none}
-.tiktok-slider{width:100%;height:100%;transition:transform .28s ease-out}
-.tiktok-item{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
-.tiktok-video{width:100%;height:100%;object-fit:contain}
-.tiktok-close{
-    position:absolute;
-    z-index:10;
-    top:16px;
-    left:16px;
-    width:36px;
-    height:36px;
-    border-radius:50%;
-    background:rgba(255,255,255,.25);
-    color:#fff;
-    border:none;
-    font-size:22px;
-    cursor:pointer;
-}
-@media(max-width:600px){
-    body{padding:14px}
-    .container{padding:0}
-    .header{padding:10px 2px;margin-bottom:14px}
-    .header h2{font-size:17px}
-    .file-item{padding:12px 14px;border-radius:8px}
-    .name-text{font-size:.88rem}
-    .icon{font-size:1.15rem;margin-right:8px}
-    .btn{padding:5px 12px;font-size:.78rem}
-    .modal-content{width:100%;height:100%;border-radius:0}
-    video{border-radius:0;height:100%}
-}
+.speed-btn:hover,.speed-btn.active{background:rgba(255,255,255,.3)}
+@media(max-width:600px){.container{padding:0}.header{padding:15px 20px}.header h2{font-size:18px}.file-item{padding:12px 15px 30px}.name-text{font-size:.95rem}.icon{font-size:1.2rem;margin-right:8px}.btn{padding:6px 12px;font-size:.8rem}.modal-content{width:100%;height:100%;border-radius:0}video{border-radius:0;height:100%}}
 </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
         <h2>📂 我的资源列表</h2>
+        <span id="cdnStatus" style="font-size:.8rem;color:#007AFF">⚡ 已连接专属加速通道</span>
     </div>
     <ul id="fileList" class="file-list">
         <li class="loading">正在加载文件列表...</li>
     </ul>
 </div>
-
+<!--【原有弹窗】DOM完全不动 -->
 <div id="videoModal" class="modal" onclick="closeVideo()">
     <div class="modal-content" onclick="event.stopPropagation()">
-        <video id="videoPlayer" controls playsinline webkit-playsinline preload="auto">您的浏览器不支持 HTML5 视频播放。</video>
+        <video id="videoPlayer" controls playsinline webkit-playsinline preload="auto">您的浏览器不支持 HTML5 视频播放。​​​</video>
         <div class="speed-control" id="speedControl">
             <button class="speed-btn" onclick="setSpeed(0.5)">0.5x</button>
             <button class="speed-btn" onclick="setSpeed(1.0)">1.0x</button>
@@ -151,73 +77,54 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     </div>
 </div>
 
-<div id="tiktokModal" class="tiktok-modal">
-    <button class="tiktok-close" onclick="closeSlidePlayer()">←</button>
-    <div class="tiktok-wrap">
-        <div id="tiktokSlider" class="tiktok-slider"></div>
-    </div>
-</div>
-
 <script>
 const owner = 'Jtstv';
 const repo = 'v1.0';
 const path = 'sp';
 const MY_WORKER_BASE = 'https://jiasu.jxqt.eu.org/';
-const apiUrl = MY_WORKER_BASE + `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-
+const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
 function getFastUrl(filePath) {
     const rawGithubUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${filePath}`;
     return MY_WORKER_BASE + rawGithubUrl;
 }
 
 let globalVideoList = [];
+let currentIdx = -1;
+let touchYStart = 0;
+const videoPlayer = document.getElementById('videoPlayer');
+const modalDom = document.getElementById('videoModal');
 
 async function loadFiles(){
     const el = document.getElementById('fileList');
     try{
-        const res = await fetch(apiUrl,{headers:{"Accept":"application/vnd.github+json"}});
+        const res = await fetch(apiUrl);
         if(!res.ok) throw new Error('无法连接 GitHub API');
         const files = await res.json();
         el.innerHTML = '';
         globalVideoList = files.filter(f=>!f.type&&/\.(mp4|mov|webm|m3u8)$/i.test(f.name));
-
         if(!files.length){
             el.innerHTML = '<li class="loading">该目录下空空如也</li>';
             return;
         }
-
-        files.sort((a,b) => {
-            if(a.type !== b.type) return a.type === 'dir' ? -1 : 1;
-            return a.name.localeCompare(b.name);
-        });
-
+        files.sort((a,b) => a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1);
         files.forEach(f => {
             const li = document.createElement('li');
             li.className = 'file-item';
-
             const isDir = f.type === 'dir';
             const isVid = /\.(mp4|mov|webm|m3u8)$/i.test(f.name);
-            const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(f.name);
-
-            let icon = '📄';
-            if(isDir) icon = '📁';
-            else if(isVid) icon = '🎬';
-            else if(isImg) icon = '🖼️';
-
+            let icon = isDir ? '📁' : isVid ? '🎬' : /\.(jpg|jpeg|png|gif)$/i.test(f.name) ? '🖼️' : '📄';
             let btns = '';
-
-            if(isDir){
-                btns = `<span style="font-size:.78rem;color:#999">文件夹</span>`;
-            }else{
+            if(isDir) {
+                btns = `<span style="font-size:0.8rem;color:#999">文件夹</span>`;
+            } else {
                 const fastUrl = getFastUrl(f.path);
                 btns += `<a href="${fastUrl}" class="btn" target="_blank">下载</a>`;
-
-                if(isVid){
+                if(isVid) {
                     const vidIndex = globalVideoList.findIndex(v=>v.name===f.name);
-                    btns += `<button onclick="openSlidePlayer(${vidIndex})" class="btn">播放</button>`;
+                    const safeUrl = fastUrl.replace(/'/g, "\\'");
+                    btns += `<button onclick="playVideo('${safeUrl}',${vidIndex})" class="btn">播放</button>`;
                 }
             }
-
             li.innerHTML = `
                 <div class="file-info">
                     <span class="icon">${icon}</span>
@@ -227,134 +134,66 @@ async function loadFiles(){
             `;
             el.appendChild(li);
         });
-
     } catch(e) {
-        el.innerHTML = `<li class="loading" style="color:#e74c3c">加载失败: ${e.message}</li>`;
+        el.innerHTML = `<li class="loading" style="color:red">加载失败: ${e.message}</li>`;
     }
 }
 
-const playVideo = url => {
-    const m = document.getElementById('videoModal');
-    const p = document.getElementById('videoPlayer');
-    p.src = url;
-    m.style.display = 'flex';
+// 原版playVideo，增加记录当前视频索引，绑定触摸事件
+const playVideo = (url,idx) => {
+    currentIdx = idx;
+    videoPlayer.src = url;
+    modalDom.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-    p.play().catch(err => console.log('需用户交互才能播放'));
+    videoPlayer.play().catch(err => console.log('需用户交互才能播放'));
+    //绑定弹窗内触摸滑动
+    modalDom.addEventListener('touchstart',ts);
+    modalDom.addEventListener('touchend',te);
 };
 
 const closeVideo = () => {
-    const m = document.getElementById('videoModal');
-    const p = document.getElementById('videoPlayer');
-    m.style.display = 'none';
-    p.pause();
-    p.src = '';
+    modalDom.style.display = 'none';
+    //解绑触摸，防止关闭后还触发
+    modalDom.removeEventListener('touchstart',ts);
+    modalDom.removeEventListener('touchend',te);
+    videoPlayer.pause();
+    videoPlayer.src = '';
     document.body.style.overflow = '';
+    currentIdx = -1;
 };
 
 const setSpeed = s => {
-    const p = document.getElementById('videoPlayer');
-    p.playbackRate = s;
+    videoPlayer.playbackRate = s;
     document.querySelectorAll('.speed-btn').forEach(b => {
         b.classList.toggle('active', parseFloat(b.textContent) === s);
     });
 };
 
-let slideIndex = 0;
-let touchYStart = 0;
-let sliderEl;
-let slideVideos = [];
-
-function onVideoEnded(){
-    if(slideIndex < globalVideoList.length - 1){
-        slideIndex++;
-        playCurrentSlide();
-    }
-}
-
-function openSlidePlayer(startIndex){
-    if(globalVideoList.length === 0) return;
-
-    slideIndex = startIndex;
-    const modal = document.getElementById('tiktokModal');
-    sliderEl = document.getElementById('tiktokSlider');
-    sliderEl.innerHTML = '';
-    slideVideos = [];
-
-    globalVideoList.forEach((vItem, idx) => {
-        const div = document.createElement('div');
-        div.className = 'tiktok-item';
-        div.style.transform = `translateY(${idx * 100}vh)`;
-        div.innerHTML = `
-            <video class="tiktok-video" playsinline webkit-playsinline preload="metadata" data-idx="${idx}" src="${getFastUrl(vItem.path)}"></video>
-        `;
-        sliderEl.appendChild(div);
-    });
-
-    slideVideos = sliderEl.querySelectorAll('.tiktok-video');
-
-    slideVideos.forEach(v => {
-        v.removeEventListener('ended', onVideoEnded);
-        v.addEventListener('ended', onVideoEnded);
-    });
-
-    modal.style.display = 'block';
-    document.body.style.overflow = 'hidden';
-    bindTouch();
-    playCurrentSlide();
-}
-
-function closeSlidePlayer(){
-    const modal = document.getElementById('tiktokModal');
-    modal.style.display = 'none';
-
-    slideVideos.forEach(v => {
-        v.removeEventListener('ended', onVideoEnded);
-        v.pause();
-        v.src = '';
-    });
-
-    document.body.style.overflow = '';
-}
-
-function playCurrentSlide(){
-    slideVideos.forEach((v, idx) => {
-        if(idx === slideIndex){
-            v.currentTime = 0;
-            v.play().catch(e => {});
-        }else{
-            v.pause();
-        }
-    });
-
-    sliderEl.style.transform = `translateY(-${slideIndex * 100}vh)`;
-}
-
-function bindTouch(){
-    sliderEl.removeEventListener('touchstart', touchStartHandle);
-    sliderEl.removeEventListener('touchend', touchEndHandle);
-    sliderEl.addEventListener('touchstart', touchStartHandle, {passive: true});
-    sliderEl.addEventListener('touchend', touchEndHandle, {passive: true});
-}
-
-function touchStartHandle(e){
+// 手势滑动逻辑，只在弹窗打开时生效
+function ts(e){
     touchYStart = e.touches[0].clientY;
 }
-
-function touchEndHandle(e){
+function te(e){
+    if(currentIdx===-1) return;
     const endY = e.changedTouches[0].clientY;
-    const diff = endY - touchYStart;
-
-    if(Math.abs(diff) < 60) return;
-
-    if(diff < -60){
-        if(slideIndex < globalVideoList.length - 1){
-            slideIndex++;
-            playCurrentSlide();
+    const dy = endY - touchYStart;
+    if(Math.abs(dy)<70) return;
+    //上滑 下一个
+    if(dy < -70){
+        if(currentIdx < globalVideoList.length-1){
+            currentIdx++;
+            const nextUrl = getFastUrl(globalVideoList[currentIdx].path);
+            videoPlayer.src = nextUrl;
+            videoPlayer.play().catch(()=>{});
         }
-    }else if(diff > 60){
-        if(slideIndex > 0){
-            slideIndex--;
-            playCurrentSlide();
+    }
+    //下滑 上一个
+    else if(dy>70){
+        if(currentIdx>0){
+            currentIdx--;
+            const prevUrl = getFastUrl(globalVideoList[currentIdx].path);
+            videoPlayer.src = prevUrl;
+            videoPlayer.play().catch(()=>{});
         }
     }
 }
