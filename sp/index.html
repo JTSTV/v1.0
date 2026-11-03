@@ -37,13 +37,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 /* 模态框样式 */
 .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background-color:rgba(0,0,0,.95);align-items:center;justify-content:center;overflow:hidden}
 .modal-content{width:90%;max-width:900px;position:relative;max-height:100vh;display:flex;justify-content:center}
-video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:contain;background:#000;
-/* 隐藏原生中间播放按钮蒙版 */
-pointer-events:auto;
-}
-video::-webkit-media-controls-start-playback-button{
-    display:none !important;
-}
+video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:contain;background:#000}
 .close-modal{position:absolute;bottom:15px;right:15px;width:40px;height:40px;background:rgba(255,255,255,.9);color:#000;border-radius:50%;text-align:center;line-height:40px;font-size:28px;font-weight:bold;cursor:pointer;z-index:1002;box-shadow:0 2px 10px rgba(0,0,0,.3);border:none;outline:none;padding:0}
 /* — 倍速控制样式更新 — */
 .speed-control{
@@ -72,23 +66,14 @@ video::-webkit-media-controls-start-playback-button{
     transition: background .2s;
 }
 .speed-btn:hover{background:rgba(255,255,255,.3)}
-@media(max-width:600px){
-    .container{padding:0}
-    .header{padding:15px 20px}
-    .header h2{font-size:18px}
-    .file-item{padding:12px 15px 30px}
-    .name-text{font-size:.95rem}
-    .icon{font-size:1.2rem;margin-right:8px}
-    .btn{padding:6px 12px;font-size:.8rem}
-    .modal-content{width:100%;height:100%;border-radius:0}
-    video{border-radius:0;height:100%}
-}
+@media(max-width:600px){.container{padding:0}.header{padding:15px 20px}.header h2{font-size:18px}.file-item{padding:12px 15px 30px}.name-text{font-size:.95rem}.icon{font-size:1.2rem;margin-right:8px}.btn{padding:6px 12px;font-size:.8rem}.modal-content{width:100%;height:100%;border-radius:0}video{border-radius:0;height:100%}}
+/* 新增缩略图样式 */
 .thumb{
     width:100%;
     aspect-ratio:9 / 16;
     object-fit:cover;
     border-radius:8px;
-    background:#222;
+    background:#000;
     display:block;
     margin-bottom:10px;
 }
@@ -116,7 +101,7 @@ video::-webkit-media-controls-start-playback-button{
     </div>
 </div>
 <script>
-// ================= 配置区域【完全原样】 =================
+// ================= 配置区域【完全原样，接口不动】 =================
 const owner = 'Jtstv';
 const repo = 'v1.0';
 const path = 'sp';
@@ -175,7 +160,7 @@ async function loadFiles(){
     }
 }
 
-// 恢复自动播放
+// 原版播放关闭函数，一字不动
 const playVideo = url => {
     const m = document.getElementById('videoModal');
     const p = document.getElementById('videoPlayer');
