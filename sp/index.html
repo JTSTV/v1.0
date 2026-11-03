@@ -13,7 +13,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .file-list{
     list-style:none;
     display:grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns:1fr 1fr;
     gap:15px;
 }
 .file-item{
@@ -67,7 +67,6 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
 }
 .speed-btn:hover{background:rgba(255,255,255,.3)}
 @media(max-width:600px){.container{padding:0}.header{padding:15px 20px}.header h2{font-size:18px}.file-item{padding:12px 15px 30px}.name-text{font-size:.95rem}.icon{font-size:1.2rem;margin-right:8px}.btn{padding:6px 12px;font-size:.8rem}.modal-content{width:100%;height:100%;border-radius:0}video{border-radius:0;height:100%}}
-/* 新增缩略图样式 */
 .thumb{
     width:100%;
     aspect-ratio:9 / 16;
@@ -101,7 +100,7 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     </div>
 </div>
 <script>
-// ================= 配置区域【完全原样，接口不动】 =================
+// ================= 配置区域【完全原样，和你源文件一字不差】 =================
 const owner = 'Jtstv';
 const repo = 'v1.0';
 const path = 'sp';
@@ -141,6 +140,7 @@ async function loadFiles(){
                     const thumbName = f.name.replace(/\.[^.]+$/, '.jpg');
                     const thumbFullPath = `.thumb/${thumbName}`;
                     const thumbUrl = getFastUrl(thumbFullPath);
+                    // 重点：图片onerror只隐藏自己，不抛出异常打断列表
                     thumbHtml = `<img class="thumb" src="${thumbUrl}" alt="缩略图" loading="lazy" onerror="this.style.display='none'">`;
                     const safeUrl = fastUrl.replace(/'/g, "\\'");
                     btns += `<button onclick="playVideo('${safeUrl}')" class="btn">播放</button>`;
