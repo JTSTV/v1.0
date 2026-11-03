@@ -72,7 +72,7 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     aspect-ratio:9 / 16;
     object-fit:cover;
     border-radius:8px;
-    background:#000;
+    background:#222;
     display:block;
     margin-bottom:10px;
 }
@@ -138,10 +138,9 @@ async function loadFiles(){
                 btns += `<a href="${fastUrl}" class="btn" target="_blank">下载</a>`;
                 if(isVid) {
                     const baseName = f.name.replace(/\.[^.]+$/, '');
-                    // 优先jpg，加载失败自动切换png
-                    const thumbJpg = getFastUrl(`.thumb/${baseName}.jpg`);
-                    const thumbPng = getFastUrl(`.thumb/${baseName}.png`);
-                    thumbHtml = `<img class="thumb" src="${thumbJpg}" alt="缩略图" loading="lazy" onerror="this.src='${thumbPng}';this.onerror='this.style.display=\'none\'">`;
+                    const thumbPngUrl = getFastUrl(`.thumb/${baseName}.png`);
+                    // 只请求png，加载失败直接隐藏图片，不再二次请求
+                    thumbHtml = `<img class="thumb" src="${thumbPngUrl}" alt="缩略图" loading="lazy" onerror="this.style.display='none'">`;
                     const safeUrl = fastUrl.replace(/'/g, "\\'");
                     btns += `<button onclick="playVideo('${safeUrl}')" class="btn">播放</button>`;
                 }
