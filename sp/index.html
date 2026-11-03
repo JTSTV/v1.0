@@ -10,7 +10,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .container{max-width:680px;margin:0 auto}
 .header{padding:15px 30px;border-radius:6px;background:#e8e8e8;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
 .header h2{font:600 20px/1.4 sans-serif;color:#444;margin:0}
-/* 只在这里增加双列，仅此一处，不碰别的 */
 .file-list{
     list-style:none;
     display:grid;
@@ -67,17 +66,7 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     transition: background .2s;
 }
 .speed-btn:hover{background:rgba(255,255,255,.3)}
-@media(max-width:600px){
-    .container{padding:0}
-    .header{padding:15px 20px}
-    .header h2{font-size:18px}
-    .file-item{padding:12px 15px 30px}
-    .name-text{font-size:.95rem}
-    .icon{font-size:1.2rem;margin-right:8px}
-    .btn{padding:6px 12px;font-size:.8rem}
-    .modal-content{width:100%;height:100%;border-radius:0}
-    video{border-radius:0;height:100%}
-}
+@media(max-width:600px){.container{padding:0}.header{padding:15px 20px}.header h2{font-size:18px}.file-item{padding:12px 15px 30px}.name-text{font-size:.95rem}.icon{font-size:1.2rem;margin-right:8px}.btn{padding:6px 12px;font-size:.8rem}.modal-content{width:100%;height:100%;border-radius:0}video{border-radius:0;height:100%}}
 /* 新增缩略图样式 */
 .thumb{
     width:100%;
@@ -112,7 +101,7 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     </div>
 </div>
 <script>
-// ================= 配置区域 =================
+// ================= 配置区域【完全原样，接口不动】 =================
 const owner = 'Jtstv';
 const repo = 'v1.0';
 const path = 'sp';
@@ -172,7 +161,7 @@ async function loadFiles(){
     }
 }
 
-// 原版播放关闭函数，完全不动（不会黑屏）
+// 原版播放关闭函数，一字不动
 const playVideo = url => {
     const m = document.getElementById('videoModal');
     const p = document.getElementById('videoPlayer');
@@ -184,4 +173,20 @@ const playVideo = url => {
 
 const closeVideo = () => {
     const m = document.getElementById('videoModal');
-    const p = do...
+    const p = document.getElementById('videoPlayer');
+    m.style.display = 'none';
+    p.pause();
+    p.removeAttribute('src');
+    p.load();
+    document.body.style.overflow = '';
+};
+
+const setSpeed = s => {
+    const p = document.getElementById('videoPlayer');
+    p.playbackRate = s;
+};
+
+loadFiles();
+</script>
+</body>
+</html>
