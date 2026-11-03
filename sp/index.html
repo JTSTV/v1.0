@@ -10,13 +10,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .container{max-width:680px;margin:0 auto}
 .header{padding:15px 30px;border-radius:6px;background:#e8e8e8;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
 .header h2{font:600 20px/1.4 sans-serif;color:#444;margin:0}
-/* [新增] 双列布局：只在源文件的 .file-list 上加 grid，其余不变 */
-.file-list{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.file-list{
+    list-style:none;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;
+}
 .file-item{
     display:flex;
     flex-direction:column;
     padding:15px 20px 35px;
-    margin-bottom:0;
+    margin-bottom:15px;
     border-radius:12px;
     position:relative;
     color:#444;
@@ -25,8 +29,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 }
 .file-info{display:flex;align-items:center;margin-bottom:12px}
 .icon{font-size:1.5rem;margin-right:12px;flex-shrink:0}
-/* [新增] 标题缩小、强制单行、超出省略 */
-.name-text{font-size:0.82rem;line-height:1.4;word-break:break-all;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.name-text{
+    font-size:0.82rem;
+    line-height:1.4;
+    word-break:break-all;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
 .actions{display:flex;gap:8px;align-self:flex-end}
 .btn{padding:8px 16px;border-radius:20px;text-decoration:none;font-size:.9rem;font-weight:500;color:#333;border:none;cursor:pointer;transition:opacity .2s;background:rgba(255,255,255,.4)}
 .btn:hover{opacity:.9}
@@ -64,7 +74,8 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
 }
 .speed-btn:hover{background:rgba(255,255,255,.3)}
 @media(max-width:600px){.container{padding:0}.header{padding:15px 20px}.header h2{font-size:18px}.file-item{padding:12px 15px 30px}.name-text{font-size:.8rem}.icon{font-size:1.2rem;margin-right:8px}.btn{padding:6px 12px;font-size:.8rem}.modal-content{width:100%;height:100%;border-radius:0}video{border-radius:0;height:100%}}
-/* [新增] 缩略图：9:16、拉伸填满无黑边 */
+
+/* 【全新新增，源文件不存在】缩略图 */
 .thumb{
     width:100%;
     aspect-ratio:9 / 16;
@@ -97,7 +108,7 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     </div>
 </div>
 <script>
-// ================= 配置区域【严格按源文件，一字不改】 =================
+// ================= 配置区域【和源文件完全一模一样，一行不改】 =================
 const owner = 'Jtstv';
 const repo = 'v1.0';
 const path = 'sp';
@@ -107,14 +118,16 @@ function getFastUrl(filePath) {
     const rawGithubUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${filePath}`;
     return MY_WORKER_BASE + rawGithubUrl;
 }
-// ================= 逻辑区域 =================
-// [新增] 去文件后缀（文件夹原样）
+
+// 【全新新增函数，源文件没有】去除展示后缀
 function stripExt(name, isDir){
     if(isDir) return name;
     const dot = name.lastIndexOf('.');
     if(dot>0) return name.substring(0,dot);
     return name;
 }
+
+// ================= 逻辑区域【原有代码行不动，只增加变量与片段】 =================
 async function loadFiles(){
     const el = document.getElementById('fileList');
     try{
@@ -135,27 +148,28 @@ async function loadFiles(){
             const isVid = /\.(mp4|mov|webm|m3u8)$/i.test(f.name);
             let icon = isDir ? '📁' : isVid ? '🎬' : /\.(jpg|jpeg|png|gif)$/i.test(f.name) ? '🖼️' : '📄';
             let btns = '';
-            let thumbHtml = '';
+            let thumbHtml = ''; //【新增变量】缩略图html
             if(isDir) {
                 btns = `<span style="font-size:0.8rem;color:#999">文件夹</span>`;
             } else {
                 const fastUrl = getFastUrl(f.path);
                 btns += `<a href="${fastUrl}" class="btn" target="_blank">下载</a>`;
                 if(isVid) {
-                    // [新增] 读取 .thumb 里同名png缩略图，失败自动隐藏，不打断列表
+                    //【新增】缩略图拼接
                     const baseName = f.name.replace(/\.[^.]+$/, '');
                     const thumbPngUrl = getFastUrl(`.thumb/${baseName}.png`);
                     thumbHtml = `<img class="thumb" src="${thumbPngUrl}" alt="缩略图" loading="lazy" onerror="this.style.display='none'">`;
+
                     const safeUrl = fastUrl.replace(/'/g, "\\'");
                     btns += `<button onclick="playVideo('${safeUrl}')" class="btn">播放</button>`;
                 }
             }
             li.innerHTML = `
+                ${thumbHtml}
                 <div class="file-info">
                     <span class="icon">${icon}</span>
                     <span class="name-text">${showName}</span>
                 </div>
-                ${thumbHtml}
                 <div class="actions">${btns}</div>
             `;
             el.appendChild(li);
@@ -165,6 +179,7 @@ async function loadFiles(){
     }
 }
 
+// 【和源文件完全原样，含自动播放 p.play().catch(()=>{})】
 const playVideo = url => {
     const m = document.getElementById('videoModal');
     const p = document.getElementById('videoPlayer');
@@ -173,7 +188,6 @@ const playVideo = url => {
     document.body.style.overflow = 'hidden';
     p.play().catch(()=>{});
 };
-
 const closeVideo = () => {
     const m = document.getElementById('videoModal');
     const p = document.getElementById('videoPlayer');
@@ -183,7 +197,6 @@ const closeVideo = () => {
     p.load();
     document.body.style.overflow = '';
 };
-
 const setSpeed = s => {
     const p = document.getElementById('videoPlayer');
     p.playbackRate = s;
