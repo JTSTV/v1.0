@@ -10,7 +10,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .container{max-width:680px;margin:0 auto}
 .header{padding:15px 30px;border-radius:6px;background:#e8e8e8;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
 .header h2{font:600 20px/1.4 sans-serif;color:#444;margin:0}
-/* 改成Grid双列 */
+/* 改成双列网格 */
 .file-list{
     list-style:none;
     display:grid;
@@ -20,7 +20,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .file-item{
     display:flex;
     flex-direction:column;
-    padding:15px 15px 30px;
+    padding:15px 15px 25px;
     border-radius:12px;
     position:relative;
     color:#444;
@@ -29,19 +29,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
     height:100%;
 }
 .file-info{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-/* 缩略图固定尺寸 160*90 */
+/* 统一固定尺寸缩略图，压缩渲染 */
 .thumb{
-    width:160px;
-    height:90px;
+    width:140px;
+    height:80px;
     object-fit:cover;
     border-radius:6px;
     flex-shrink:0;
     background:#ccc;
 }
 .icon{font-size:1.5rem;flex-shrink:0}
-.name-text{font-size:.92rem;line-height:1.4;word-break:break-all}
-.actions{display:flex;gap:6px;align-self:flex-end;margin-top:auto}
-.btn{padding:7px 12px;border-radius:20px;text-decoration:none;font-size:.8rem;font-weight:500;color:#333;border:none;cursor:pointer;transition:opacity .2s;background:rgba(255,255,255,.4)}
+.name-text{font-size:0.9rem;line-height:1.4;word-break:break-all}
+.actions{display:flex;gap:8px;align-self:flex-end;margin-top:auto}
+.btn{padding:8px 12px;border-radius:20px;text-decoration:none;font-size:.8rem;font-weight:500;color:#333;border:none;cursor:pointer;transition:opacity .2s;background:rgba(255,255,255,.4)}
 .btn:hover{opacity:.9}
 .loading{grid-column: 1 / -1;text-align:center;padding:40px;color:#888}
 /* 模态框样式 */
@@ -76,15 +76,13 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     transition: background .2s;
 }
 .speed-btn:hover{background:rgba(255,255,255,.3)}
-@media(max-width:520px){
+@media(max-width:600px){
     .container{padding:0}
-    .header{padding:15px 15px}
+    .header{padding:15px 20px}
     .header h2{font-size:18px}
-    /* 小屏幕变回单列 */
-    .file-list{grid-template-columns:1fr}
-    .file-item{padding:12px 12px 25px}
-    .thumb{width:120px;height:68px}
-    .name-text{font-size:.9rem}
+    .file-item{padding:12px 12px 20px}
+    .thumb{width:100px;height:60px}
+    .name-text{font-size:.85rem}
     .icon{font-size:1.2rem}
     .btn{padding:6px 10px;font-size:.75rem}
     .modal-content{width:100%;height:100%;border-radius:0}
@@ -114,11 +112,10 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     </div>
 </div>
 <script>
-// ================= 配置区域 =================
+// ================= 配置区域【完全原样，接口一行不改】 =================
 const owner = 'Jtstv';
 const repo = 'v1.0';
-const path = 'sp';       // 视频目录
-const thumbPath = '.thumb';// 缩略图目录，加.，GitHub网页隐藏
+const path = 'sp';
 const MY_WORKER_BASE = 'https://jiasu.jxqt.eu.org/';
 const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
 function getFastUrl(filePath) {
@@ -138,7 +135,6 @@ async function loadFiles(){
             return;
         }
         files.sort((a,b) => a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1);
-
         files.forEach(f => {
             const li = document.createElement('li');
             li.className = 'file-item';
@@ -153,9 +149,9 @@ async function loadFiles(){
                 const fastUrl = getFastUrl(f.path);
                 btns += `<a href="${fastUrl}" class="btn" target="_blank">下载</a>`;
                 if(isVid) {
-                    // 缩略图：同级.thumb文件夹，同名jpg
+                    // 读取 .thumb 里面同名jpg缩略图
                     const thumbName = f.name.replace(/\.[^.]+$/, '.jpg');
-                    const thumbFullPath = `${thumbPath}/${thumbName}`;
+                    const thumbFullPath = `.thumb/${thumbName}`;
                     const thumbUrl = getFastUrl(thumbFullPath);
                     thumbHtml = `<img class="thumb" src="${thumbUrl}" alt="缩略图" loading="lazy" onerror="this.parentElement.innerHTML='<span class=\'icon\'>🎬</span>'">`;
                     const safeUrl = fastUrl.replace(/'/g, "\\'");
@@ -172,7 +168,7 @@ async function loadFiles(){
             el.appendChild(li);
         });
     } catch(e) {
-        el.innerHTML = `<li class="loading" style="color:red;grid-column:1/-1">加载失败: ${e.message}</li>`;
+        el.innerHTML = `<li class="loading" style="color:red">加载失败: ${e.message}</li>`;
     }
 }
 
@@ -188,10 +184,11 @@ const playVideo = url => {
 const closeVideo = () => {
     const m = document.getElementById('videoModal');
     const p = document.getElementById('videoPlayer');
-    m.style.display = 'none';
+    p.style.display = 'none';
     p.pause();
     p.removeAttribute('src');
     p.load();
+    m.style.display = 'none';
     document.body.style.overflow = '';
 };
 
