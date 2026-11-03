@@ -22,8 +22,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
     background:#fff;
     border:1px solid #ddd;
 }
-.file-info{display:flex;align-items:center;margin-bottom:12px}
-.icon{font-size:1.5rem;margin-right:12px;flex-shrink:0}
+.file-info{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+/* 缩略图固定尺寸 160*90 */
+.thumb{
+    width:160px;
+    height:90px;
+    object-fit:cover;
+    border-radius:6px;
+    flex-shrink:0;
+    background:#ccc;
+}
+.icon{font-size:1.5rem;flex-shrink:0}
 .name-text{font-size:1rem;line-height:1.4;word-break:break-all}
 .actions{display:flex;gap:8px;align-self:flex-end}
 .btn{padding:8px 16px;border-radius:20px;text-decoration:none;font-size:.9rem;font-weight:500;color:#333;border:none;cursor:pointer;transition:opacity .2s;background:rgba(255,255,255,.4)}
@@ -34,7 +43,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .modal-content{width:90%;max-width:900px;position:relative;max-height:100vh;display:flex;justify-content:center}
 video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:contain;background:#000}
 .close-modal{position:absolute;bottom:15px;right:15px;width:40px;height:40px;background:rgba(255,255,255,.9);color:#000;border-radius:50%;text-align:center;line-height:40px;font-size:28px;font-weight:bold;cursor:pointer;z-index:1002;box-shadow:0 2px 10px rgba(0,0,0,.3);border:none;outline:none;padding:0}
-/* --- 倍速控制样式更新 --- */
+/* — 倍速控制样式更新 — */
 .speed-control{
     position: absolute;
     top: 50%;
@@ -61,7 +70,19 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     transition: background .2s;
 }
 .speed-btn:hover{background:rgba(255,255,255,.3)}
-@media(max-width:600px){.container{padding:0}.header{padding:15px 20px}.header h2{font-size:18px}.file-item{padding:12px 15px 30px}.name-text{font-size:.95rem}.icon{font-size:1.2rem;margin-right:8px}.btn{padding:6px 12px;font-size:.8rem}.modal-content{width:100%;height:100%;border-radius:0}video{border-radius:0;height:100%}}
+@media(max-width:600px){
+    .container{padding:0}
+    .header{padding:15px 20px}
+    .header h2{font-size:18px}
+    .file-item{padding:12px 15px 30px}
+    .file-info{flex-wrap:wrap}
+    .thumb{width:120px;height:68px}
+    .name-text{font-size:.95rem}
+    .icon{font-size:1.2rem;margin-right:8px}
+    .btn{padding:6px 12px;font-size:.8rem}
+    .modal-content{width:100%;height:100%;border-radius:0}
+    video{border-radius:0;height:100%}
+}
 </style>
 </head>
 <body>
@@ -77,7 +98,7 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
 <!-- 视频播放弹窗 -->
 <div id="videoModal" class="modal" onclick="closeVideo()">
     <div class="modal-content" onclick="event.stopPropagation()">
-        <video id="videoPlayer" controls playsinline preload="none">您的浏览器不支持 HTML5 视频播放。​​​</video>
+        <video id="videoPlayer" controls playsinline preload="none">您的浏览器不支持 HTML5 视频播放。</video>
         <div class="speed-control" id="speedControl">
             <button class="speed-btn" onclick="setSpeed(0.5)">0.5x</button>
             <button class="speed-btn" onclick="setSpeed(1.0)">1.0x</button>
@@ -89,7 +110,8 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
 // ================= 配置区域 =================
 const owner = 'Jtstv';
 const repo = 'v1.0';
-const path = 'sp';
+const path = 'sp';       // 视频目录
+const thumbPath = '.thumb';// 缩略图目录，加.，GitHub网页隐藏
 const MY_WORKER_BASE = 'https://jiasu.jxqt.eu.org/';
 const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
 function getFastUrl(filePath) {
@@ -109,6 +131,7 @@ async function loadFiles(){
             return;
         }
         files.sort((a,b) => a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1);
+
         files.forEach(f => {
             const li = document.createElement('li');
             li.className = 'file-item';
@@ -116,19 +139,25 @@ async function loadFiles(){
             const isVid = /\.(mp4|mov|webm|m3u8)$/i.test(f.name);
             let icon = isDir ? '📁' : isVid ? '🎬' : /\.(jpg|jpeg|png|gif)$/i.test(f.name) ? '🖼️' : '📄';
             let btns = '';
+            let thumbHtml = '';
             if(isDir) {
                 btns = `<span style="font-size:0.8rem;color:#999">文件夹</span>`;
             } else {
                 const fastUrl = getFastUrl(f.path);
                 btns += `<a href="${fastUrl}" class="btn" target="_blank">下载</a>`;
                 if(isVid) {
+                    // 缩略图：同级.thumb文件夹，同名jpg
+                    const thumbName = f.name.replace(/\.[^.]+$/, '.jpg');
+                    const thumbFullPath = `${thumbPath}/${thumbName}`;
+                    const thumbUrl = getFastUrl(thumbFullPath);
+                    thumbHtml = `<img class="thumb" src="${thumbUrl}" alt="缩略图" loading="lazy" onerror="this.parentElement.innerHTML='<span class=\'icon\'>🎬</span>'">`;
                     const safeUrl = fastUrl.replace(/'/g, "\\'");
                     btns += `<button onclick="playVideo('${safeUrl}')" class="btn">播放</button>`;
                 }
             }
             li.innerHTML = `
                 <div class="file-info">
-                    <span class="icon">${icon}</span>
+                    ${thumbHtml || `<span class="icon">${icon}</span>`}
                     <span class="name-text">${f.name}</span>
                 </div>
                 <div class="actions">${btns}</div>
