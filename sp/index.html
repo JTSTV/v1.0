@@ -172,9 +172,15 @@ async function loadFiles(){
     }
 }
 
+// ==========【修复：修正播放，防止关闭再打开黑屏】==========
 const playVideo = url => {
     const m = document.getElementById('videoModal');
     const p = document.getElementById('videoPlayer');
+    // 先重置video实例，避免上一次缓存状态造成黑屏
+    p.pause();
+    p.removeAttribute('src');
+    p.load();
+    // 赋值新地址
     p.src = url;
     m.style.display = 'flex';
     document.body.style.overflow = 'hidden';
@@ -184,7 +190,7 @@ const playVideo = url => {
 const closeVideo = () => {
     const m = document.getElementById('videoModal');
     const p = document.getElementById('videoPlayer');
-    p.style.display = 'none';
+    // 顺序：优先处理视频，再隐藏弹窗！
     p.pause();
     p.removeAttribute('src');
     p.load();
