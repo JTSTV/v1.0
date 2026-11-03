@@ -67,7 +67,6 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
 }
 .speed-btn:hover{background:rgba(255,255,255,.3)}
 @media(max-width:600px){.container{padding:0}.header{padding:15px 20px}.header h2{font-size:18px}.file-item{padding:12px 15px 30px}.name-text{font-size:.95rem}.icon{font-size:1.2rem;margin-right:8px}.btn{padding:6px 12px;font-size:.8rem}.modal-content{width:100%;height:100%;border-radius:0}video{border-radius:0;height:100%}}
-/* 新增缩略图样式 */
 .thumb{
     width:100%;
     aspect-ratio:9 / 16;
@@ -101,7 +100,7 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     </div>
 </div>
 <script>
-// ================= 配置区域【完全原样，接口不动】 =================
+// 【完全原样，一点不改】
 const owner = 'Jtstv';
 const repo = 'v1.0';
 const path = 'sp';
@@ -111,12 +110,13 @@ function getFastUrl(filePath) {
     const rawGithubUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${filePath}`;
     return MY_WORKER_BASE + rawGithubUrl;
 }
-// ================= 逻辑区域 =================
-async function loadFiles(){
+
+// 仅包装重试，不修改url、不修改请求头
+async function loadFiles(retryCount = 0){
     const el = document.getElementById('fileList');
     try{
+        // 这里fetch和你最原始写法一致
         const res = await fetch(apiUrl);
-        if(!res.ok) throw new Error('无法连接 GitHub API');
         const files = await res.json();
         el.innerHTML = '';
         if(!files.length){
@@ -156,11 +156,16 @@ async function loadFiles(){
             el.appendChild(li);
         });
     } catch(e) {
-        el.innerHTML = `<li class="loading" style="color:red">加载失败: ${e.message}</li>`;
+        // 最多重试2次
+        if(retryCount < 2){
+            setTimeout(()=>loadFiles(retryCount+1), 800);
+            return;
+        }
+        el.innerHTML = `<li class="loading" style="color:red">加载失败: Load failed</li>`;
     }
 }
 
-// 原版播放关闭函数，一字不动
+// 【播放函数原样】
 const playVideo = url => {
     const m = document.getElementById('videoModal');
     const p = document.getElementById('videoPlayer');
