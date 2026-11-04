@@ -65,11 +65,6 @@
     "type": "file"
   },
   {
-    "name": "filelist.json",
-    "path": "sp/filelist.json",
-    "type": "file"
-  },
-  {
     "name": "一字马风.MP4",
     "path": "sp/一字马风.MP4",
     "type": "file"
