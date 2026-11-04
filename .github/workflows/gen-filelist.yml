@@ -18,15 +18,19 @@ jobs:
           import os, json
           items = []
           root_dir = "sp"
-          for name in os.listdir(root_dir):
-            full_path = os.path.join(root_dir, name)
-            rel_path = os.path.relpath(full_path)
-            if name == ".thumb":
-                continue
-            if os.path.isdir(full_path):
-                items.append({"name":name,"path":rel_path,"type":"dir"})
-            else:
-                items.append({"name":name,"path":rel_path,"type":"file"})
+          # 如果sp不存在就直接空数组
+          if not os.path.exists(root_dir):
+              items = []
+          else:
+              for name in os.listdir(root_dir):
+                  full_path = os.path.join(root_dir, name)
+                  rel_path = os.path.relpath(full_path)
+                  if name == ".thumb":
+                      continue
+                  if os.path.isdir(full_path):
+                      items.append({"name":name,"path":rel_path,"type":"dir"})
+                  else:
+                      items.append({"name":name,"path":rel_path,"type":"file"})
           with open("sp/filelist.json","w",encoding="utf-8") as f:
               json.dump(items, f, ensure_ascii=False, indent=2)
         shell: python3
@@ -37,7 +41,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add sp/filelist.json
           if git diff --staged --quiet; then
-            echo "filelist.json无变化，跳过提交"
+            echo "No change, skip commit"
           else
             git commit -m "auto update filelist.json [skip ci]"
             git push
