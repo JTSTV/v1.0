@@ -36,28 +36,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:contain;background:#000}
 .close-modal{position:absolute;bottom:15px;right:15px;width:40px;height:40px;background:rgba(255,255,255,.9);color:#000;border-radius:50%;text-align:center;line-height:40px;font-size:28px;font-weight:bold;cursor:pointer;z-index:1002;border:none;outline:none;padding:0}
 .speed-control{
-    position: absolute;
-    top: 50%;
-    right: 15px;
-    transform: translateY(-50%);
-    background: rgba(0,0,0,.6);
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: 20px;
-    font-size: 0.7rem;
-    z-index: 1001;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
+    position:absolute;
+    top:50%;
+    right:15px;
+    transform:translateY(-50%);
+    background:rgba(0,0,0,.6);
+    color:#fff;
+    padding:5px 10px;
+    border-radius:20px;
+    font-size:0.7rem;
+    z-index:1001;
+    display:flex;
+    flex-direction:column;
+    gap:5px;
 }
 .speed-btn{
-    background: none;
-    border: none;
-    color: #fff;
-    cursor: pointer;
-    padding: 2px 6px;
-    font-size: 0.7rem;
-    border-radius: 4px;
+    background:none;
+    border:none;
+    color:#fff;
+    cursor:pointer;
+    padding:2px 6px;
+    font-size:0.7rem;
+    border-radius:4px;
 }
 @media(max-width:600px){
 .container{padding:0}
@@ -94,7 +94,7 @@ video{border-radius:0;height:100%}
 <div id="videoModal" class="modal">
     <div class="modal-content">
         <video id="videoPlayer" controls playsinline preload="metadata">您的浏览器不支持 HTML5 视频播放。</video>
-        <div class="speed-control" id="speedControl">
+        <div class="speed-control">
             <button class="speed-btn" onclick="setSpeed(0.5)">0.5x</button>
             <button class="speed-btn" onclick="setSpeed(1.0)">1.0x</button>
         </div>
@@ -105,9 +105,11 @@ video{border-radius:0;height:100%}
 const owner = 'Jtstv';
 const repo = 'v1.0';
 const MY_WORKER_BASE = 'https://jiasu.jxqt.eu.org/';
+
 const modal = document.getElementById('videoModal');
 const p = document.getElementById('videoPlayer');
 const listWrap = document.getElementById('fileList');
+
 let playLock = false;
 
 function releaseVideoResource(){
@@ -173,15 +175,11 @@ async function loadFiles(){
 
 const playVideo = async function(url){
     if(playLock) return;
-    // 如果弹窗已经打开，先关闭、释放资源，禁止弹窗内直接切换视频
-    if(modal.style.display === 'flex'){
-        closeVideo();
-    }
+    if(modal.style.display === 'flex') closeVideo();
     playLock = true;
     try{
         p.src = url;
         modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
         p.currentTime = 0;
         await p.play();
     }catch(err){
@@ -194,7 +192,6 @@ const playVideo = async function(url){
 const closeVideo = () => {
     releaseVideoResource();
     modal.style.display = 'none';
-    document.body.style.overflow = '';
 };
 
 const setSpeed = s => {
