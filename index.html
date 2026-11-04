@@ -105,7 +105,6 @@ video{border-radius:0;height:100%}
 const owner = 'Jtstv';
 const repo = 'v1.0';
 const MY_WORKER_BASE = 'https://jiasu.jxqt.eu.org/';
-const listJsonUrl = './filelist.json';
 
 const modal = document.getElementById('videoModal');
 const p = document.getElementById('videoPlayer');
@@ -131,7 +130,9 @@ function stripExt(name){
 
 async function loadFiles(){
     try{
-        const res = await fetch(listJsonUrl);
+        // ✔ json同样走Worker代理拉取github
+        const jsonUrl = getFastUrl("filelist.json");
+        const res = await fetch(jsonUrl);
         if(!res.ok) throw new Error('读取filelist.json失败 status:'+res.status);
         const files = await res.json();
         const filterFiles = files.filter(item=> item.name !== "filelist.json" && item.type !== "dir");
@@ -181,4 +182,26 @@ const playVideo = async function(url){
         p.src = url;
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
-        p...
+        p.currentTime = 0;
+        await p.play();
+    }catch(err){
+        console.log("浏览器拦截自动播放，请手动点视频内播放按钮");
+    }finally{
+        setTimeout(()=>{playLock=false},400);
+    }
+};
+
+const closeVideo = () => {
+    releaseVideoResource();
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+};
+
+const setSpeed = s => {
+    p.playbackRate = s;
+};
+
+loadFiles();
+</script>
+</body>
+</html>
