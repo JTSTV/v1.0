@@ -80,6 +80,7 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     margin-bottom:10px;
     background:#888;
 }
+.debug{font-size:12px;color:red;margin:10px 0}
 </style>
 </head>
 <body>
@@ -88,6 +89,7 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
         <h2>📂 我的资源列表</h2>
         <span id="cdnStatus" style="font-size:.8rem;color:#007AFF">⚡ 已连接专属加速通道</span>
     </div>
+    <div id="debugBox" class="debug"></div>
     <ul id="fileList" class="file-list">
         <li class="loading">正在加载文件列表...</li>
     </ul>
@@ -105,10 +107,14 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
 <script>
 const owner = 'Jtstv';
 const repo = 'v1.0';
-const path = 'sp';
 const MY_WORKER_BASE = 'https://jiasu.jxqt.eu.org/';
-// 修正路径：json在sp文件夹内
-const listJsonUrl = './sp/filelist.json';
+// 部署路径是 /v1.0，写绝对子路径
+const listJsonUrl = '/v1.0/sp/filelist.json';
+const debugBox = document.getElementById("debugBox");
+
+function logDebug(msg){
+    debugBox.innerText += msg + "\n";
+}
 
 function getFastUrl(filePath) {
     const rawGithubUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${filePath}`;
@@ -125,16 +131,26 @@ function stripExt(name, isDir){
 async function loadFiles(){
     const el = document.getElementById('fileList');
     try{
+        logDebug("请求地址："+listJsonUrl);
         const res = await fetch(listJsonUrl);
-        if(!res.ok) throw new Error('读取filelist.json失败');
+        logDebug("响应状态码："+res.status);
+        if(!res.ok) throw new Error('读取filelist.json失败 status:'+res.status);
         const files = await res.json();
+        logDebug("读取到文件数量："+files.length);
+
+        const filterFiles = files.filter(item=>{
+            if(item.name === "filelist.json") return false;
+            if(item.name === "index.html") return false;
+            return true;
+        });
+
         el.innerHTML = '';
-        if(!files.length){
+        if(!filterFiles.length){
             el.innerHTML = '<li class="loading">该目录下空空如也</li>';
             return;
         }
-        files.sort((a,b) => a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1);
-        files.forEach(f => {
+        filterFiles.sort((a,b) => a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1);
+        filterFiles.forEach(f => {
             const li = document.createElement('li');
             li.className = 'file-item';
             const isDir = f.type === 'dir';
@@ -168,6 +184,7 @@ async function loadFiles(){
         });
     } catch(e) {
         el.innerHTML = `<li class="loading" style="color:red">加载失败: ${e.message}</li>`;
+        logDebug("异常："+e.message);
     }
 }
 
@@ -183,10 +200,10 @@ const playVideo = url => {
 const closeVideo = () => {
     const m = document.getElementById('videoModal');
     const p = document.getElementById('videoPlayer');
-    p.style.display = 'none';
     p.pause();
     p.removeAttribute('src');
     p.load();
+    m.style.display = 'none';
     document.body.style.overflow = '';
 };
 
