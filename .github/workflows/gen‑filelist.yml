@@ -1,0 +1,49 @@
+name: Generate filelist
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate root filelist.json
+        run: |
+          python3 << 'EOF'
+          import os, json
+          items = []
+          root_dir = "sp"
+
+          if os.path.exists(root_dir):
+              for name in os.listdir(root_dir):
+                  full_path = os.path.join(root_dir, name)
+                  rel_path = os.path.relpath(full_path)
+                  t = "dir" if os.path.isdir(full_path) else "file"
+                  items.append({
+                      "name": name,
+                      "path": rel_path,
+                      "type": t
+                  })
+          # 输出到【仓库根目录】
+          out_file = "filelist.json"
+          with open(out_file, "w", encoding="utf‑8") as f:
+              json.dump(items, f, ensure_ascii=False, indent=2)
+          EOF
+
+      - name: Commit & Push
+        run: |
+          git config user.name "github‑actions[bot]"
+          git config user.email "github‑actions[bot]@users.noreply.github.com"
+          git add filelist.json
+          if git diff --cached --quiet; then
+            echo "无变更，跳过提交"
+          else
+            git commit -m "auto update root filelist.json [skip ci]"
+            git push
+          fi
