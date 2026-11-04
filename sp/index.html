@@ -82,6 +82,7 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     border-radius:8px;
     display:block;
     margin-bottom:10px;
+    background:#ccc;
 }
 </style>
 </head>
@@ -114,12 +115,10 @@ const path = 'sp';
 const MY_WORKER_BASE = 'https://jiasu.jxqt.eu.org/';
 // ✅ 重点：apiUrl直接访问github，不走worker代理，和源文件完全一致
 const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-
 function getFastUrl(filePath) {
     const rawGithubUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${filePath}`;
     return MY_WORKER_BASE + rawGithubUrl;
 }
-
 //【新增】去除展示后缀，文件夹保持原名
 function stripExt(name, isDir){
     if(isDir) return name;
@@ -127,7 +126,6 @@ function stripExt(name, isDir){
     if(dot>0) return name.substring(0,dot);
     return name;
 }
-
 // ================= 逻辑区域【源文件原版逻辑，不加超时、不加内部重试】 =================
 async function loadFiles(){
     const el = document.getElementById('fileList');
@@ -157,8 +155,9 @@ async function loadFiles(){
                 btns += `<a href="${fastUrl}" class="btn" target="_blank">下载</a>`;
                 if(isVid) {
                     const baseName = f.name.replace(/\.[^.]+$/, '');
-                    const thumbPngUrl = getFastUrl(`${path}/.thumb/${baseName}.png`);
-                    thumbHtml = `<img class="thumb" src="${thumbPngUrl}" alt="缩略图" loading="lazy" onerror="this.style.display='none'">`;
+                    // ✅修复：写死sp/.thumb，不再用${path}拼接；同时加灰色占位背景，图片找不到会显示灰色块而不是完全消失
+                    const thumbPngUrl = getFastUrl(`sp/.thumb/${baseName}.png`);
+                    thumbHtml = `<img class="thumb" src="${thumbPngUrl}" alt="缩略图" loading="lazy">`;
                     const safeUrl = fastUrl.replace(/'/g, "\\'");
                     btns += `<button onclick="playVideo('${safeUrl}')" class="btn">播放</button>`;
                 }
@@ -177,7 +176,6 @@ async function loadFiles(){
         el.innerHTML = `<li class="loading" style="color:red">加载失败: ${e.message}</li>`;
     }
 }
-
 //【源文件原版，保留自动播放】
 const playVideo = url => {
     const m = document.getElementById('videoModal');
@@ -190,7 +188,7 @@ const playVideo = url => {
 const closeVideo = () => {
     const m = document.getElementById('videoModal');
     const p = document.getElementById('videoPlayer');
-    m.style.display = 'none';
+    p.style.display = 'none';
     p.pause();
     p.removeAttribute('src');
     p.load();
@@ -200,7 +198,6 @@ const setSpeed = s => {
     const p = document.getElementById('videoPlayer');
     p.playbackRate = s;
 };
-
 loadFiles();
 </script>
 </body>
