@@ -49,5 +49,5 @@ jobs:
             echo "无变更，跳过提交"
           else
             git commit -m "auto update filelist.json [skip ci]"
-            git push
+            git push 
           fi
