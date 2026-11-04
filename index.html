@@ -105,11 +105,9 @@ video{border-radius:0;height:100%}
 const owner = 'Jtstv';
 const repo = 'v1.0';
 const MY_WORKER_BASE = 'https://jiasu.jxqt.eu.org/';
-
 const modal = document.getElementById('videoModal');
 const p = document.getElementById('videoPlayer');
 const listWrap = document.getElementById('fileList');
-
 let playLock = false;
 
 function releaseVideoResource(){
@@ -130,7 +128,6 @@ function stripExt(name){
 
 async function loadFiles(){
     try{
-        // ✔ json同样走Worker代理拉取github
         const jsonUrl = getFastUrl("filelist.json");
         const res = await fetch(jsonUrl);
         if(!res.ok) throw new Error('读取filelist.json失败 status:'+res.status);
@@ -143,7 +140,6 @@ async function loadFiles(){
         }
         filterFiles.sort((a,b)=>a.name.localeCompare(b.name));
         const frag = document.createDocumentFragment();
-
         filterFiles.forEach(f => {
             const li = document.createElement('li');
             li.className = 'file-item';
@@ -177,6 +173,10 @@ async function loadFiles(){
 
 const playVideo = async function(url){
     if(playLock) return;
+    // 如果弹窗已经打开，先关闭、释放资源，禁止弹窗内直接切换视频
+    if(modal.style.display === 'flex'){
+        closeVideo();
+    }
     playLock = true;
     try{
         p.src = url;
