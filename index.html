@@ -24,6 +24,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
     color:#444;
     background:#fff;
     border:1px solid #ddd;
+    content-visibility:auto;
 }
 .file-info{display:flex;align-items:center;margin-bottom:12px}
 .icon{font-size:1.5rem;margin-right:12px;flex-shrink:0}
@@ -31,6 +32,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .actions{display:flex;gap:8px;align-self:flex-end}
 .btn{padding:8px 16px;border-radius:20px;text-decoration:none;font-size:.9rem;font-weight:500;color:#333;border:none;cursor:pointer;transition:opacity .2s;background:rgba(255,255,255,.4)}
 .btn:hover{opacity:.9}
+.btn:active{opacity:0.75}
 .loading{grid-column:1/-1;text-align:center;padding:40px;color:#888}
 .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background-color:rgba(0,0,0,.95);align-items:center;justify-content:center;overflow:hidden}
 .modal-content{width:90%;max-width:900px;position:relative;max-height:100vh;display:flex;justify-content:center}
@@ -62,7 +64,17 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     transition: background .2s;
 }
 .speed-btn:hover{background:rgba(255,255,255,.3)}
-@media(max-width:600px){.container{padding:0}.header{padding:15px 20px}.header h2{font-size:18px}.file-item{padding:12px 15px 30px}.name-text{font-size:.8rem}.icon{font-size:1.2rem;margin-right:8px}.btn{padding:6px 12px;font-size:.8rem}.modal-content{width:100%;height:100%;border-radius:0}video{border-radius:0;height:100%}}
+@media(max-width:600px){
+.container{padding:0}
+.header{padding:15px 20px}
+.header h2{font-size:18px}
+.file-item{padding:12px 15px 30px}
+.name-text{font-size:.8rem}
+.icon{font-size:1.2rem;margin-right:8px}
+.btn{padding:6px 12px;font-size:.8rem}
+.modal-content{width:100%;height:100%;border-radius:0}
+video{border-radius:0;height:100%}
+}
 .thumb{
     width:100%;
     aspect-ratio:9 / 16;
@@ -70,6 +82,7 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     border-radius:8px;
     display:block;
     margin-bottom:10px;
+    background:#888;
 }
 </style>
 </head>
@@ -83,9 +96,9 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
         <li class="loading">正在加载文件列表...</li>
     </ul>
 </div>
-<div id="videoModal" class="modal" onclick="closeVideo()">
-    <div class="modal-content" onclick="event.stopPropagation()">
-        <video id="videoPlayer" controls playsinline preload="none">您的浏览器不支持 HTML5 视频播放。</video>
+<div id="videoModal" class="modal">
+    <div class="modal-content">
+        <video id="videoPlayer" controls playsinline preload="metadata">您的浏览器不支持 HTML5 视频播放。</video>
         <div class="speed-control" id="speedControl">
             <button class="speed-btn" onclick="setSpeed(0.5)">0.5x</button>
             <button class="speed-btn" onclick="setSpeed(1.0)">1.0x</button>
@@ -101,91 +114,95 @@ const listJsonUrl = './filelist.json';
 
 const modal = document.getElementById('videoModal');
 const p = document.getElementById('videoPlayer');
+const listWrap = document.getElementById('fileList');
 
-// 视频播放结束自动关闭弹窗
-p.onended = function(){
-    closeVideo();
-};
-// ESC按键关闭弹窗
-document.addEventListener('keydown',function(e){
-    if(e.key === 'Escape') closeVideo();
-});
+let playLock = false; // 防重复点击播放锁
+
+// 仅关闭弹窗才释放全部资源
+function releaseVideoResource(){
+    p.pause();
+    p.removeAttribute("src");
+    p.load();
+}
 
 function getFastUrl(filePath) {
     const rawGithubUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${filePath}`;
     return MY_WORKER_BASE + rawGithubUrl;
 }
 
-function stripExt(name, isDir){
-    if(isDir) return name;
+function stripExt(name){
     const dot = name.lastIndexOf('.');
-    if(dot>0) return name.substring(0,dot);
-    return name;
+    return dot>0 ? name.substring(0,dot) : name;
 }
 
 async function loadFiles(){
-    const el = document.getElementById('fileList');
     try{
-        const res = await fetch(listJsonUrl);
+        const res = await fetch(listJsonUrl, {cache:"no‑cache"});
         if(!res.ok) throw new Error('读取filelist.json失败 status:'+res.status);
         const files = await res.json();
-        const filterFiles = files.filter(item=> item.name !== "filelist.json");
-        el.innerHTML = '';
+        const filterFiles = files.filter(item=> item.name !== "filelist.json" && item.type !== "dir");
+        listWrap.innerHTML = '';
         if(!filterFiles.length){
-            el.innerHTML = '<li class="loading">该目录下空空如也</li>';
+            listWrap.innerHTML = '<li class="loading">该目录下空空如也</li>';
             return;
         }
-        filterFiles.sort((a,b) => a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1);
+        filterFiles.sort((a,b)=>a.name.localeCompare(b.name));
+
+        // DocumentFragment：批量插入DOM，减少重绘，长列表提速
+        const frag = document.createDocumentFragment();
+
         filterFiles.forEach(f => {
             const li = document.createElement('li');
             li.className = 'file-item';
-            const isDir = f.type === 'dir';
-            const showName = stripExt(f.name, isDir);
             const isVid = /\.(mp4|mov|webm|m3u8)$/i.test(f.name);
-            let icon = isDir ? '📁' : isVid ? '🎬' : /\.(jpg|jpeg|png|gif)$/i.test(f.name) ? '🖼️' : '📄';
-            let btns = '';
+            const showName = stripExt(f.name);
             let thumbHtml = '';
-            if(isDir) {
-                btns = `<span style="font-size:0.8rem;color:#999">文件夹</span>`;
-            } else {
+            let btns = '';
+
+            if(isVid) {
+                const baseName = stripExt(f.name);
+                const thumbPngUrl = getFastUrl(`.thumb/${baseName}.png`);
+                thumbHtml = `<img class="thumb" src="${thumbPngUrl}" alt="缩略图" loading="lazy" decoding="async" onerror="this.style.display='none'">`;
                 const fastUrl = getFastUrl(f.path);
                 btns += `<a href="${fastUrl}" class="btn" target="_blank">下载</a>`;
-                if(isVid) {
-                    const baseName = f.name.replace(/\.[^.]+$/, '');
-                    const thumbPngUrl = getFastUrl(`.thumb/${baseName}.png`);
-                    thumbHtml = `<img class="thumb" src="${thumbPngUrl}" alt="缩略图" loading="lazy" onerror="this.style.display='none'">`;
-                    const safeUrl = fastUrl.replace(/'/g, "\\'");
-                    btns += `<button onclick="playVideo('${safeUrl}')" class="btn">播放</button>`;
-                }
+                btns += `<button onclick="playVideo('${fastUrl.replace(/'/g,"\\'")}')" class="btn">播放</button>`;
             }
+
             li.innerHTML = `
                 ${thumbHtml}
                 <div class="file-info">
-                    <span class="icon">${icon}</span>
+                    <span class="icon">🎬</span>
                     <span class="name-text">${showName}</span>
                 </div>
                 <div class="actions">${btns}</div>
             `;
-            el.appendChild(li);
+            frag.appendChild(li);
         });
+        listWrap.appendChild(frag);
     } catch(e) {
-        el.innerHTML = `<li class="loading" style="color:red">加载失败: ${e.message}</li>`;
+        listWrap.innerHTML = `<li class="loading" style="color:red">加载失败: ${e.message}</li>`;
     }
 }
 
-const playVideo = url => {
-    p.src = url;
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    p.play().catch(()=>{});
+const playVideo = async function(url){
+    if(playLock) return;
+    playLock = true;
+    try{
+        p.src = url;
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        p.currentTime = 0;
+        await p.play();
+    }catch(err){
+        console.log("播放拦截:",err);
+    }finally{
+        setTimeout(()=>{playLock=false},400);
+    }
 };
 
-// 修复：同时隐藏modal弹窗，重置video
 const closeVideo = () => {
+    releaseVideoResource();
     modal.style.display = 'none';
-    p.pause();
-    p.src = '';
-    p.load();
     document.body.style.overflow = '';
 };
 
