@@ -8,18 +8,14 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#e8e8e8;color:#444;padding:20px}
 .container{max-width:680px;margin:0 auto}
-.header{padding:15px 30px;border-radius:12px;background:#e8e8e8;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.header{padding:15px 30px;border-radius:6px;background:#e8e8e8;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
 .header h2{font:600 20px/1.4 sans-serif;color:#444;margin:0}
-.file-list{
-    list-style:none;
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:15px;
-}
+.file-list{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:15px}
 .file-item{
     display:flex;
     flex-direction:column;
     padding:15px 20px 35px;
+    margin-bottom:0;
     border-radius:12px;
     position:relative;
     color:#444;
@@ -28,14 +24,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 }
 .file-info{display:flex;align-items:center;margin-bottom:12px}
 .icon{font-size:1.5rem;margin-right:12px;flex-shrink:0}
-.name-text{
-    font-size:0.82rem;
-    line-height:1.4;
-    word-break:break-all;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-}
+.name-text{font-size:0.82rem;line-height:1.4;word-break:break-all;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .actions{display:flex;gap:8px;align-self:flex-end}
 .btn{padding:8px 16px;border-radius:20px;text-decoration:none;font-size:.9rem;font-weight:500;color:#333;border:none;cursor:pointer;transition:opacity .2s;background:rgba(255,255,255,.4)}
 .btn:hover{opacity:.9}
@@ -78,9 +67,7 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
     border-radius:8px;
     display:block;
     margin-bottom:10px;
-    background:#888;
 }
-.debug{font-size:12px;color:red;margin:10px 0}
 </style>
 </head>
 <body>
@@ -89,7 +76,6 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
         <h2>📂 我的资源列表</h2>
         <span id="cdnStatus" style="font-size:.8rem;color:#007AFF">⚡ 已连接专属加速通道</span>
     </div>
-    <div id="debugBox" class="debug"></div>
     <ul id="fileList" class="file-list">
         <li class="loading">正在加载文件列表...</li>
     </ul>
@@ -108,13 +94,8 @@ video{width:100%;height:auto;max-height:100vh;border-radius:8px;object-fit:conta
 const owner = 'Jtstv';
 const repo = 'v1.0';
 const MY_WORKER_BASE = 'https://jiasu.jxqt.eu.org/';
-// 部署路径是 /v1.0，写绝对子路径
-const listJsonUrl = '/v1.0/sp/filelist.json';
-const debugBox = document.getElementById("debugBox");
-
-function logDebug(msg){
-    debugBox.innerText += msg + "\n";
-}
+// ✅json放到仓库根目录
+const listJsonUrl = './filelist.json';
 
 function getFastUrl(filePath) {
     const rawGithubUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${filePath}`;
@@ -131,18 +112,10 @@ function stripExt(name, isDir){
 async function loadFiles(){
     const el = document.getElementById('fileList');
     try{
-        logDebug("请求地址："+listJsonUrl);
         const res = await fetch(listJsonUrl);
-        logDebug("响应状态码："+res.status);
         if(!res.ok) throw new Error('读取filelist.json失败 status:'+res.status);
         const files = await res.json();
-        logDebug("读取到文件数量："+files.length);
-
-        const filterFiles = files.filter(item=>{
-            if(item.name === "filelist.json") return false;
-            if(item.name === "index.html") return false;
-            return true;
-        });
+        const filterFiles = files.filter(item=> item.name !== "filelist.json");
 
         el.innerHTML = '';
         if(!filterFiles.length){
@@ -150,15 +123,17 @@ async function loadFiles(){
             return;
         }
         filterFiles.sort((a,b) => a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1);
+
         filterFiles.forEach(f => {
             const li = document.createElement('li');
             li.className = 'file-item';
             const isDir = f.type === 'dir';
-            const isVid = /\.(mp4|mov|webm|m3u8)$/i.test(f.name);
             const showName = stripExt(f.name, isDir);
-            let thumbHtml = '';
+            const isVid = /\.(mp4|mov|webm|m3u8)$/i.test(f.name);
             let icon = isDir ? '📁' : isVid ? '🎬' : /\.(jpg|jpeg|png|gif)$/i.test(f.name) ? '🖼️' : '📄';
             let btns = '';
+            let thumbHtml = '';
+
             if(isDir) {
                 btns = `<span style="font-size:0.8rem;color:#999">文件夹</span>`;
             } else {
@@ -166,8 +141,8 @@ async function loadFiles(){
                 btns += `<a href="${fastUrl}" class="btn" target="_blank">下载</a>`;
                 if(isVid) {
                     const baseName = f.name.replace(/\.[^.]+$/, '');
-                    const thumbPngUrl = getFastUrl(`sp/.thumb/${baseName}.png`);
-                    thumbHtml = `<img class="thumb" src="${thumbPngUrl}" alt="缩略图" loading="lazy" onerror="this.src=''">`;
+                    const thumbPngUrl = getFastUrl(`.thumb/${baseName}.png`);
+                    thumbHtml = `<img class="thumb" src="${thumbPngUrl}" alt="缩略图" loading="lazy" onerror="this.style.display='none'">`;
                     const safeUrl = fastUrl.replace(/'/g, "\\'");
                     btns += `<button onclick="playVideo('${safeUrl}')" class="btn">播放</button>`;
                 }
@@ -184,7 +159,6 @@ async function loadFiles(){
         });
     } catch(e) {
         el.innerHTML = `<li class="loading" style="color:red">加载失败: ${e.message}</li>`;
-        logDebug("异常："+e.message);
     }
 }
 
@@ -200,10 +174,10 @@ const playVideo = url => {
 const closeVideo = () => {
     const m = document.getElementById('videoModal');
     const p = document.getElementById('videoPlayer');
+    p.style.display = 'none';
     p.pause();
     p.removeAttribute('src');
     p.load();
-    m.style.display = 'none';
     document.body.style.overflow = '';
 };
 
