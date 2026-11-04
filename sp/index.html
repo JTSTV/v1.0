@@ -107,9 +107,8 @@ const owner = 'Jtstv';
 const repo = 'v1.0';
 const path = 'sp';
 const MY_WORKER_BASE = 'https://jiasu.jxqt.eu.org/';
-
-// ✅不再调用api.github.com，读取仓库静态json文件
-const listJsonUrl = './filelist.json';
+// 修正路径：json在sp文件夹内
+const listJsonUrl = './sp/filelist.json';
 
 function getFastUrl(filePath) {
     const rawGithubUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${filePath}`;
@@ -126,11 +125,9 @@ function stripExt(name, isDir){
 async function loadFiles(){
     const el = document.getElementById('fileList');
     try{
-        // 读取本地静态json，不走github api
         const res = await fetch(listJsonUrl);
         if(!res.ok) throw new Error('读取filelist.json失败');
         const files = await res.json();
-
         el.innerHTML = '';
         if(!files.length){
             el.innerHTML = '<li class="loading">该目录下空空如也</li>';
@@ -146,7 +143,6 @@ async function loadFiles(){
             let thumbHtml = '';
             let icon = isDir ? '📁' : isVid ? '🎬' : /\.(jpg|jpeg|png|gif)$/i.test(f.name) ? '🖼️' : '📄';
             let btns = '';
-
             if(isDir) {
                 btns = `<span style="font-size:0.8rem;color:#999">文件夹</span>`;
             } else {
@@ -160,7 +156,6 @@ async function loadFiles(){
                     btns += `<button onclick="playVideo('${safeUrl}')" class="btn">播放</button>`;
                 }
             }
-
             li.innerHTML = `
                 ${thumbHtml}
                 <div class="file-info">
@@ -184,6 +179,7 @@ const playVideo = url => {
     document.body.style.overflow = 'hidden';
     p.play().catch(()=>{});
 };
+
 const closeVideo = () => {
     const m = document.getElementById('videoModal');
     const p = document.getElementById('videoPlayer');
@@ -193,6 +189,7 @@ const closeVideo = () => {
     p.load();
     document.body.style.overflow = '';
 };
+
 const setSpeed = s => {
     const p = document.getElementById('videoPlayer');
     p.playbackRate = s;
