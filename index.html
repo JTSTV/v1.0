@@ -104,28 +104,23 @@ video{border-radius:0;height:100%}
 <script>
 // 全部直接使用当前域名（crsx.eu.org/v1.0），不再经过Worker代理
 const BASE = "./";
-
 const modal = document.getElementById('videoModal');
 const p = document.getElementById('videoPlayer');
 const listWrap = document.getElementById('fileList');
 let playLock = false;
-
 function releaseVideoResource(){
     p.pause();
     p.removeAttribute("src");
     p.load();
 }
-
 // 直接拼接相对路径，不走worker
 function getDirectUrl(filePath) {
     return BASE + filePath;
 }
-
 function stripExt(name){
     const dot = name.lastIndexOf('.');
     return dot>0 ? name.substring(0,dot) : name;
 }
-
 async function loadFiles(){
     try{
         const jsonUrl = getDirectUrl("filelist.json");
@@ -171,6 +166,7 @@ async function loadFiles(){
     }
 }
 
+// ✅完全参考你给示例代码的自动播放逻辑
 const playVideo = async function(url){
     if(playLock) return;
     if(modal.style.display === 'flex') closeVideo();
@@ -179,9 +175,9 @@ const playVideo = async function(url){
         p.src = url;
         modal.style.display = 'flex';
         p.currentTime = 0;
-        // 删除自动播放，交给用户手动点击
+        await p.play();
     }catch(err){
-        console.log("播放错误");
+        console.log("浏览器拦截自动播放，请手动点视频内播放按钮");
     }finally{
         setTimeout(()=>{playLock=false},400);
     }
@@ -191,7 +187,6 @@ const closeVideo = () => {
     releaseVideoResource();
     modal.style.display = 'none';
 };
-
 const setSpeed = s => {
     p.playbackRate = s;
 };
