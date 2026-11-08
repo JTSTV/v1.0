@@ -104,13 +104,57 @@ video{border-radius:0;height:100%}
 <script>
 const owner = 'Jtstv';
 const repo = 'v1.0';
-const MY_WORKER_BASE = 'https://jiasu.jxqt.eu.org/';
+const WORKER_HOST_PART1 = "https:";
+const WORKER_HOST_PART2 = "//jiasu.jxqt.eu.org";
+let MY_WORKER_BASE = WORKER_HOST_PART1 + WORKER_HOST_PART2;
+
+let accessToken = null;
+let playLock = false;
 
 const modal = document.getElementById('videoModal');
 const p = document.getElementById('videoPlayer');
 const listWrap = document.getElementById('fileList');
 
-let playLock = false;
+async function acquireToken(){
+  let pwd;
+  while(true){
+    pwd = prompt("请输入访问密码：");
+    if(!pwd){
+      listWrap.innerHTML = `<li class="loading" style="color:red">未输入密码，禁止访问</li>`;
+      return false;
+    }
+    try{
+      const resp = await fetch(`${MY_WORKER_BASE}/get-token`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({password:pwd})
+      });
+      const res = await resp.json();
+      if(res.ok){
+        accessToken = res.token;
+        return true;
+      }else{
+        alert("密码错误，请重试");
+      }
+    }catch(err){
+      listWrap.innerHTML = `<li class="loading" style="color:red">连接Worker失败：${err.message}</li>`;
+      return false;
+    }
+  }
+}
+
+function getFastUrl(filePath) {
+  const repoPath = `${owner}/${repo}/main/${filePath}`;
+  const params = new URLSearchParams();
+  params.set("path",repoPath);
+  params.set("token",accessToken);
+  return `${MY_WORKER_BASE}/proxy?` + params.toString();
+}
+
+function stripExt(name){
+  const dot = name.lastIndexOf('.');
+  return dot>0 ? name.substring(0,dot) : name;
+}
 
 function releaseVideoResource(){
     p.pause();
@@ -118,17 +162,10 @@ function releaseVideoResource(){
     p.load();
 }
 
-function getFastUrl(filePath) {
-    const rawGithubUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${filePath}`;
-    return MY_WORKER_BASE + rawGithubUrl;
-}
-
-function stripExt(name){
-    const dot = name.lastIndexOf('.');
-    return dot>0 ? name.substring(0,dot) : name;
-}
-
 async function loadFiles(){
+  const ok = await acquireToken();
+  if(!ok) return;
+
     try{
         const jsonUrl = getFastUrl("filelist.json");
         const res = await fetch(jsonUrl);
@@ -188,12 +225,10 @@ const playVideo = async function(url){
         setTimeout(()=>{playLock=false},400);
     }
 };
-
 const closeVideo = () => {
     releaseVideoResource();
     modal.style.display = 'none';
 };
-
 const setSpeed = s => {
     p.playbackRate = s;
 };
