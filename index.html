@@ -7,24 +7,29 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
 body{background:#111;color:#fff;padding:12px}
-.item{background:#222;border-radius:8px;padding:14px;margin-bottom:10px;cursor:pointer}
-.item:active{background:#333}
+/* 保留原版缩略图布局样式 */
+.list{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.item{background:#222;border-radius:8px;overflow:hidden;cursor:pointer}
+.thumb{width:100%;aspect-ratio:16/9;object-fit:cover}
+.name{padding:8px;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
 .modal{position:fixed;inset:0;background:rgba(0,0,0.92);display:none;z-index:99}
 .modal.show{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px}
 .closeBtn{position:absolute;top:16px;right:16px;background:#333;border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:22px;cursor:pointer}
 video{max-width:100%;max-height:80vh;object-fit:contain}
+
+/* 新增登录框样式 */
 .loginBox{max-width:340px;margin:30vh auto;background:#222;padding:20px;border-radius:10px}
 input{width:100%;padding:12px;margin:10px 0;border:none;border-radius:6px;font-size:16px}
 button{width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:16px}
 .tip{color:#ff6b6b;font-size:14px;margin-top:8px}
-#globalTip{color:#42b983;font-size:15px;margin:10px}
-#listWrap{display:none}
+#globalTip{color:#42b983;font-size:15px;margin:10px;text-align:center}
 </style>
 </head>
 <body>
-
 <div id="globalTip"></div>
 
+<!-- 登录弹窗，新增 -->
 <div class="loginBox" id="loginBox">
   <h3 style="text-align:center;margin-bottom:15px">私有系统登录</h3>
   <input type="password" id="pwdInput" placeholder="请输入专属密码">
@@ -32,20 +37,21 @@ button{width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-
   <div class="tip" id="loginTip"></div>
 </div>
 
-<div id="listWrap"></div>
+<!-- 原版双列缩略图列表容器，原样保留 -->
+<div class="list" id="listWrap" style="display:none"></div>
 
+<!-- 原版播放器弹窗 -->
 <div class="modal" id="videoModal">
   <button class="closeBtn" onclick="closePlayer()">×</button>
   <video id="videoPlayer" controls playsinline></video>
 </div>
 
 <script>
-// ============ 固定配置，不要修改 ============
+// ============ 配置项 ============
 const workerUrl = "https://jiasu.jxqt.eu.org";
 const filelistUrl = "./filelist.json";
 const videoBaseUrl = "https://crsx.eu.org/v1.0";
-// =====================================
-
+// ================================
 let token = "";
 
 const loginBox = document.getElementById("loginBox");
@@ -58,11 +64,10 @@ const loginTip = document.getElementById("loginTip");
 function showLoginMsg(t){loginTip.innerText = t;}
 function showGlobalMsg(t){globalTip.innerText = t;}
 
-// 登录获取私有Token
+// 【新增】登录获取Token
 async function doLogin() {
   let pwd = document.getElementById("pwdInput").value.trim();
   if(!pwd) return showLoginMsg("请输入密码");
-
   showLoginMsg("验证中...");
   try {
     let res = await fetch(workerUrl + "/get-token", {
@@ -70,73 +75,71 @@ async function doLogin() {
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({password:pwd})
     });
-
     let data = await res.json();
-
     if(!data.ok){
       return showLoginMsg(data.msg);
     }
-
     token = data.token;
-    showGlobalMsg("✅验证成功，已获得私有加速权限");
+    showGlobalMsg("✅验证成功");
     loginBox.style.display = "none";
     loadFileList();
-
   } catch(e) {
     showLoginMsg("网络错误");
   }
 }
 
-// 读取视频列表（filelist.json从github pages读取，不走worker）
+// ==========【原版读取列表+缩略图渲染代码原样恢复，读取.thumb文件夹】==========
 async function loadFileList() {
   try {
     let res = await fetch(filelistUrl);
     let files = await res.json();
-
     if(!Array.isArray(files)){
       showGlobalMsg("❌列表格式错误");
       return;
     }
-
     let list = files.filter(x=>x.name !== "filelist.json" && x.type === "file");
     list.sort((a,b)=>a.name.localeCompare(b.name,"zh"));
-
     renderList(list);
     showGlobalMsg(`✅加载成功，共${list.length}个视频`);
-
   } catch(e) {
     showGlobalMsg("❌读取列表失败");
   }
 }
 
+// 原版缩略图渲染，读取 .thumb 里面的图片
 function renderList(arr){
   listWrap.innerHTML = "";
   arr.forEach(item=>{
-    let div = document.createElement("div");
+    const div = document.createElement("div");
     div.className = "item";
-    div.innerText = item.name;
+    // 缩略图路径 .thumb/同名.jpg
+    const thumbSrc = `.thumb/${item.name}.jpg`;
+    div.innerHTML = `
+      <img class="thumb" src="${thumbSrc}" alt="">
+      <div class="name">${item.name}</div>
+    `;
     div.onclick = ()=> openVideo(item.path);
     listWrap.appendChild(div);
   })
-  listWrap.style.display = "block";
+  listWrap.style.display = "grid";
 }
 
-// 打开视频，自动拼接带token的私有加速链接
+// 打开视频：只修改这一行，自动拼接worker代理加速链接（保留原版弹窗逻辑）
 function openVideo(path){
   let src = videoBaseUrl + "/" + path;
   let proxy = workerUrl + "/proxy?token="+token+"&url="+encodeURIComponent(src);
-
   videoPlayer.src = proxy;
   videoModal.classList.add("show");
 }
 
+// 原版关闭播放器逻辑
 function closePlayer(){
   videoPlayer.pause();
   videoPlayer.src = "";
   videoModal.classList.remove("show");
 }
 
-// 禁止ESC按键关闭弹窗
+// 禁止ESC关闭弹窗
 document.addEventListener("keydown",e=>{
   if(e.key=="Escape")e.preventDefault();
 })
