@@ -20,6 +20,7 @@ button{width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-
 </style>
 </head>
 <body>
+
 <div class="loginBox" id="loginBox">
   <h3 style="text-align:center;margin-bottom:12px">已连接专属加速通道</h3>
   <input type="password" id="pwdInput" placeholder="输入访问密码">
@@ -31,14 +32,17 @@ button{width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-
 
 <div class="modal" id="videoModal">
   <button class="closeBtn" onclick="closePlayer()">×</button>
-  <video id="videoPlayer" controls></video>
+  <video id="videoPlayer" controls playsinline></video>
 </div>
 
 <script>
-// ========= 这里改成你的配置 =========
 const workerUrl = "https://jiasu.jxqt.eu.org";
-const filelistUrl = "https://xxx/filelist.json"; //替换成你filelist.json真实地址
-// ===================================
+
+// filelist.json 位于网页根目录
+const filelistUrl = "https://crsx.eu.org/v1.0/filelist.json";
+
+// 视频基础地址：你的网页根目录
+const videoBaseUrl = "https://crsx.eu.org/v1.0";
 
 let token = "";
 const loginBox = document.getElementById("loginBox");
@@ -73,7 +77,6 @@ async function doLogin(){
   }
 }
 
-// 【已修复】直接读取顶层数组的filelist.json
 async function loadFileList() {
   try {
     const res = await fetch(`${workerUrl}/proxy?token=${token}&url=${encodeURIComponent(filelistUrl)}`);
@@ -83,7 +86,13 @@ async function loadFileList() {
       showMsg("filelist.json 不是数组格式");
       return;
     }
+
+    // 排除 filelist.json 本身和文件夹
     const list = files.filter(item => item.name !== "filelist.json" && item.type !== "dir");
+
+    // 按名称排序，保持列表顺序
+    list.sort((a, b) => a.name.localeCompare(b.name, "zh"));
+
     renderList(list);
   } catch (err) {
     showMsg(`加载失败: ${err.message}`);
@@ -99,23 +108,39 @@ function renderList(arr){
     div.textContent = item.name;
     div.onclick = ()=> openVideo(item.path);
     listWrap.appendChild(div);
-  })
+  });
   listWrap.style.display = "block";
 }
 
 async function openVideo(path){
-  const srcUrl = `https://github.com你的仓库地址/${path}`; //改成你视频文件基础地址
+  // 拼接真实视频地址，然后走 Worker 代理
+  const srcUrl = `${videoBaseUrl}/${path}`;
   const proxyUrl = `${workerUrl}/proxy?token=${token}&url=${encodeURIComponent(srcUrl)}`;
+
   videoPlayer.src = proxyUrl;
   videoModal.classList.add("show");
-  videoPlayer.play();
+
+  try {
+    await videoPlayer.play();
+  } catch (err) {
+    console.warn("自动播放被阻止，请手动点击播放", err);
+  }
 }
 
 function closePlayer(){
   videoPlayer.pause();
-  videoPlayer.src = ""; //释放资源，解决切换卡顿
+  videoPlayer.removeAttribute("src");
+  videoPlayer.load();
   videoModal.classList.remove("show");
 }
+
+// 只能点击 × 关闭弹窗，不支持 ESC
+document.addEventListener("keydown", function(e){
+  if(e.key === "Escape"){
+    e.preventDefault();
+  }
+});
 </script>
+
 </body>
 </html>
