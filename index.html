@@ -9,17 +9,20 @@
 body{background:#111;color:#fff;padding:12px}
 .item{background:#222;border-radius:8px;padding:14px;margin-bottom:10px;cursor:pointer}
 .item:active{background:#333}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,0.92);display:none;z-index:99}
+.modal{position:fixed;inset:0;background:rgba(0,0,0.92);display:none;z-index:99}
 .modal.show{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px}
 .closeBtn{position:absolute;top:16px;right:16px;background:#333;border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:22px;cursor:pointer}
 video{max-width:100%;max-height:80vh;object-fit:contain}
 .loginBox{max-width:340px;margin:30vh auto;background:#222;padding:20px;border-radius:10px}
 input{width:100%;padding:12px;margin:10px 0;border:none;border-radius:6px;font-size:16px}
 button{width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:16px}
-.tip{text-align:center;margin:12px 0;color:#ff6b6b}
+.tip{color:#ff6b6b;margin:10px 0;}
+#globalTip{color:#ff6b6b;font-size:16px;margin:16px 0;white-space:pre-wrap}
 </style>
 </head>
 <body>
+<!-- 全局提示，登录框隐藏后依然可见 -->
+<div id="globalTip"></div>
 
 <div class="loginBox" id="loginBox">
   <h3 style="text-align:center;margin-bottom:12px">已连接专属加速通道</h3>
@@ -37,11 +40,7 @@ button{width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-
 
 <script>
 const workerUrl = "https://jiasu.jxqt.eu.org";
-
-// filelist.json 位于网页根目录
 const filelistUrl = "https://crsx.eu.org/v1.0/filelist.json";
-
-// 视频基础地址：你的网页根目录
 const videoBaseUrl = "https://crsx.eu.org/v1.0";
 
 let token = "";
@@ -49,15 +48,18 @@ const loginBox = document.getElementById("loginBox");
 const listWrap = document.getElementById("listWrap");
 const videoModal = document.getElementById("videoModal");
 const videoPlayer = document.getElementById("videoPlayer");
+const globalTip = document.getElementById("globalTip");
 
-function showMsg(text){
-  const tip = document.getElementById("loginTip");
-  tip.textContent = text;
+function showGlobalMsg(text){
+  globalTip.textContent = text;
+}
+function showLoginMsg(text){
+  document.getElementById("loginTip").textContent = text;
 }
 
 async function doLogin(){
   const pwd = document.getElementById("pwdInput").value.trim();
-  showMsg("正在验证...");
+  showLoginMsg("正在验证密码...");
   try{
     const res = await fetch(`${workerUrl}/get-token`,{
       method:"POST",
@@ -66,36 +68,36 @@ async function doLogin(){
     });
     const ret = await res.json();
     if(!ret.ok){
-      showMsg(ret.msg || "密码错误");
+      showLoginMsg(ret.msg || "密码错误");
       return;
     }
     token = ret.token;
+    showGlobalMsg("✅登录成功，正在加载文件列表...");
     loginBox.style.display = "none";
     loadFileList();
   }catch(err){
-    showMsg(`登录失败:${err.message}`);
+    showLoginMsg(`登录请求失败:${err.message}`);
   }
 }
 
 async function loadFileList() {
   try {
+    showGlobalMsg("正在通过代理获取filelist.json");
     const res = await fetch(`${workerUrl}/proxy?token=${token}&url=${encodeURIComponent(filelistUrl)}`);
+    showGlobalMsg("收到返回，正在解析JSON");
     const files = await res.json();
 
     if (!Array.isArray(files)) {
-      showMsg("filelist.json 不是数组格式");
+      showGlobalMsg("❌错误：返回内容不是数组");
       return;
     }
-
-    // 排除 filelist.json 本身和文件夹
+    showGlobalMsg(`✅读取成功，共${files.length}个文件，正在渲染列表`);
     const list = files.filter(item => item.name !== "filelist.json" && item.type !== "dir");
-
-    // 按名称排序，保持列表顺序
     list.sort((a, b) => a.name.localeCompare(b.name, "zh"));
-
     renderList(list);
+    showGlobalMsg("");
   } catch (err) {
-    showMsg(`加载失败: ${err.message}`);
+    showGlobalMsg(`❌加载列表失败: ${err.message}`);
     console.error(err);
   }
 }
@@ -113,17 +115,14 @@ function renderList(arr){
 }
 
 async function openVideo(path){
-  // 拼接真实视频地址，然后走 Worker 代理
   const srcUrl = `${videoBaseUrl}/${path}`;
   const proxyUrl = `${workerUrl}/proxy?token=${token}&url=${encodeURIComponent(srcUrl)}`;
-
   videoPlayer.src = proxyUrl;
   videoModal.classList.add("show");
-
   try {
     await videoPlayer.play();
   } catch (err) {
-    console.warn("自动播放被阻止，请手动点击播放", err);
+    console.warn("自动播放拦截，请手动点击播放");
   }
 }
 
@@ -134,7 +133,7 @@ function closePlayer(){
   videoModal.classList.remove("show");
 }
 
-// 只能点击 × 关闭弹窗，不支持 ESC
+// 禁用ESC关闭弹窗
 document.addEventListener("keydown", function(e){
   if(e.key === "Escape"){
     e.preventDefault();
