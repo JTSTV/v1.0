@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>播放</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;width:100%;overflow:hidden;background:#000}
+body{display:flex;align-items:center;justify-content:center}
+/* 完整适配窗口：不变形、不撑破、不产生滚动条 */
+video{
+    width:100%;
+    height:100vh;
+    max-width:100%;
+    max-height:100%;
+    object-fit:contain;
+    display:block;
+    background:#000;
+}
+/* 移动端地址栏收起后动态适配，避免底部留白 */
+@supports (height:100dvh){
+    video{height:100dvh}
+}
+</style>
+</head>
+<body>
+<video id="player" controls playsinline webkit-playsinline preload="metadata"></video>
+<script>
+function getQuery(name){
+    const params = new URLSearchParams(location.search);
+    return params.get(name);
+}
+const src = getQuery("src");
+const player = document.getElementById("player");
+if(src){
+    player.src = decodeURIComponent(src);
+} else {
+    document.body.innerHTML = "<p style='color:#fff;padding:20px'>缺少视频地址</p>";
+}
+</script>
+</body>
+</html>
