@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="expires" content="0">
 <meta http-equiv="pragma" content="no-cache">
@@ -17,7 +17,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .file-item{
     display:flex;
     flex-direction:column;
-    padding:15px 20px 25px;
+    padding:15px 20px 35px;
     border-radius:12px;
     color:#444;
     background:#fff;
@@ -27,7 +27,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 .file-info{display:flex;align-items:center;margin-bottom:12px}
 .icon{font-size:1.5rem;margin-right:12px;flex-shrink:0}
 .name-text{font-size:0.82rem;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.actions{display:flex;gap:8px;align-self:flex-end;margin-top:10px}
+.actions{display:flex;gap:8px;align-self:flex-end}
 .btn{padding:8px 16px;border-radius:20px;text-decoration:none;font-size:.9rem;font-weight:500;color:#333;border:none;cursor:pointer;background:rgba(255,255,255,.4)}
 .btn:active{opacity:0.75}
 .loading{grid-column:1/-1;text-align:center;padding:40px;color:#888}
@@ -40,21 +40,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
     margin-bottom:10px;
     background:#888;
 }
-/* 内联播放器，自适应、不撑破容器，苹果Safari内联播放 */
-.inside-video{
-    width:100%;
-    max-width:100%;
-    height:auto;
-    border-radius:8px;
-    display:none;
-    margin:8px 0;
-    object-fit:contain;
-}
 @media(max-width:600px){
 .container{padding:0}
 .header{padding:15px 20px}
 .header h2{font-size:18px}
-.file-item{padding:12px 15px 22px}
+.file-item{padding:12px 15px 30px}
 .name-text{font-size:.8rem}
 .icon{font-size:1.2rem;margin-right:8px}
 .btn{padding:6px 12px;font-size:.8rem}
@@ -72,10 +62,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
     </ul>
 </div>
 <script>
-// 全部直接使用当前域名（crsx.eu.org/v1.0），不再经过Worker代理
 const BASE = "./";
 const listWrap = document.getElementById('fileList');
-let playLock = false;
 
 function getDirectUrl(filePath) {
     return BASE + filePath;
@@ -84,35 +72,10 @@ function stripExt(name){
     const dot = name.lastIndexOf('.');
     return dot>0 ? name.substring(0,dot) : name;
 }
-
-// 点击播放：展开当前卡片内的视频，不弹窗
-const playVideo = async function(btnEl, url){
-    if(playLock) return;
-    playLock = true;
-    const videoDom = btnEl.closest('.file-item').querySelector('.inside-video');
-    // 如果已经打开，关闭
-    if(!videoDom){
-        setTimeout(()=>{playLock=false},400);
-        return;
-    }
-    if(videoDom.style.display === 'block'){
-        videoDom.pause();
-        videoDom.style.display = 'none';
-        setTimeout(()=>{playLock=false},400);
-        return;
-    }
-    // 显示并播放
-    videoDom.src = url;
-    videoDom.style.display = 'block';
-    try{
-        videoDom.currentTime = 0;
-        await videoDom.play();
-    }catch(err){
-        console.log("浏览器拦截自动播放，请手动点视频内播放按钮");
-    }finally{
-        setTimeout(()=>{playLock=false},400);
-    }
-};
+// 新标签页打开独立播放器
+function openPlayer(url){
+    window.open(BASE + "player.html?src=" + encodeURIComponent(url), "_blank");
+}
 
 async function loadFiles(){
     try{
@@ -135,20 +98,17 @@ async function loadFiles(){
             const showName = stripExt(f.name);
             let thumbHtml = '';
             let btns = '';
-            let videoHtml = '';
             if(isVid) {
                 const baseName = stripExt(f.name);
                 const thumbPngUrl = getDirectUrl(`.thumb/${baseName}.png`);
                 const directVideoUrl = getDirectUrl(f.path);
-                thumbHtml = `<img class="thumb" src="${thumbPngUrl}" alt="缩略图" onerror="this.style.display='none'">`;
-                // playsinline + webkit-playsinline 苹果不会自动切全屏
-                videoHtml = `<video class="inside-video" controls playsinline webkit-playsinline preload="metadata"></video>`;
-                btns += `<a href="${directVideoUrl}" class="btn" target="_blank">下载</a>`;
-                btns += `<button onclick="playVideo(this,'${directVideoUrl.replace(/'/g,"\\'")}')" class="btn">播放</button>`;
+                // 保留懒加载 loading="lazy" decoding="async"
+                thumbHtml = `<img class="thumb" src="${thumbPngUrl}" alt="缩略图" loading="lazy" decoding="async" onerror="this.style.display='none'">`;
+                btns += `<a href="${directVideoUrl}" class="btn" target="_blank" download>下载</a>`;
+                btns += `<button onclick="openPlayer('${directVideoUrl.replace(/'/g,"\\'")}')" class="btn">播放</button>`;
             }
             li.innerHTML = `
                 ${thumbHtml}
-                ${videoHtml}
                 <div class="file-info">
                     <span class="icon">🎬</span>
                     <span class="name-text">${showName}</span>
